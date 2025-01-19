@@ -6,7 +6,7 @@ En tout premier il nous faut une bande de valeureux cavaliers grace aux quels no
 
 CAVALIER CLIENT : il s'occupe de gerer les clients waou quel combattant agerri.
 
-CAVALIER SERVER : il gerer le serv a lui seul acclamer celui qui porte le monde WAOU 
+CAVALIER SERVER : il gerer le serv a lui seul acclamez celui qui porte le monde WAOU 
 
 CAVALIER PARSING_CONF 
 
