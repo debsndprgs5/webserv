@@ -1,0 +1,312 @@
+
+Voici un résumé détaillé et structuré des points essentiels de la spécification HTTP/1.1 
+(telle que définie historiquement dans la RFC 2616, et plus récemment scindée en plusieurs 
+RFC 7230-7235). L’objectif est de comprendre les concepts clés pour implémenter ton propre 
+serveur HTTP. Ce résumé se concentre sur les éléments utiles à un projet « Webserv » comme 
+celui que tu dois réaliser.
+
+---
+
+## 1. Vue d’ensemble du protocole HTTP
+
+HTTP (Hypertext Transfer Protocol) est un protocole **client-serveur**, principalement 
+utilisé pour la communication entre un navigateur (ou autre agent utilisateur) et un 
+serveur web.
+
+- **Sans état (stateless)** : Chaque requête HTTP est généralement indépendante des 
+  précédentes (même si on peut utiliser des cookies ou sessions pour maintenir un contexte).
+- **Texte brut** : Les messages sont basés sur du texte (ASCII) et suivent une structure 
+  bien définie (lignes, entêtes, etc.).
+
+---
+
+## 2. Structure générale des messages
+
+HTTP définit deux types de messages principaux :  
+- **Les requêtes** (envoyées par le client)  
+- **Les réponses** (envoyées par le serveur)
+
+### 2.1. Requête HTTP
+
+Une requête HTTP comprend :
+
+1. **La ligne de requête**  
+   Forme générale :  
+
+METHOD SP REQUEST-URI SP HTTP-VERSION CRLF
+
+- **METHOD** : ex. `GET`, `POST`, `DELETE`, etc.  
+- **REQUEST-URI** : le chemin de la ressource demandée, ex. `/index.html` ou `/api/v1/data`.  
+- **HTTP-VERSION** : en général `HTTP/1.1`.  
+- **SP** : un espace (ASCII 32).  
+- **CRLF** : retour chariot + saut de ligne (`\r\n`).
+
+2. **Les champs d’entête (headers)**  
+- Plusieurs lignes au format `Header-Name: Header-Value`.  
+- Exemples de headers courants :  
+  - `Host: exemple.com`  
+  - `Content-Type: text/html`  
+  - `Content-Length: 123`  
+  - `Transfer-Encoding: chunked`  
+  - `Connection: keep-alive` ou `close`  
+- Certains headers sont obligatoires ou recommandés. **Host** est obligatoire en HTTP/1.1.
+
+3. **Une ligne vide (CRLF)**  
+- Séparateur entre les entêtes et le corps (body).
+
+4. **Le corps (body) éventuel**  
+- Présent principalement pour les méthodes comme `POST` ou `PUT`, et peut contenir des données 
+  (par ex. formulaire, JSON, fichier…).  
+- Sa taille peut être définie par `Content-Length` ou bien le transfert peut se faire en `chunked`.
+
+> **Important pour le projet**  
+> - Parsage correct de la ligne de requête et des headers.  
+> - Gérer correctement la taille du body, ou le mode chunked.  
+> - Respecter la limite de body si configurée.
+
+---
+
+### 2.2. Réponse HTTP
+
+Une réponse HTTP comprend :
+
+1. **La ligne d’état (Status Line)**  
+Forme générale :  
+
+HTTP-VERSION SP STATUS-CODE SP REASON-PHRASE CRLF
+
+- **HTTP-VERSION** : `HTTP/1.1`.  
+- **STATUS-CODE** : nombre entier à trois chiffres (ex. `200`, `404`, `500`).  
+- **REASON-PHRASE** : message descriptif (ex. `OK`, `Not Found`, `Internal Server Error`).
+
+2. **Les champs d’entête (headers)**  
+- Même format que dans la requête.  
+- Exemple : `Content-Type: text/html`, `Content-Length: 456`, etc.
+
+3. **Une ligne vide (CRLF)**
+
+4. **Le corps (body)**  
+- La ressource ou la réponse du serveur : HTML, JSON, données binaires, etc.  
+- Peut également être chunked, etc.
+
+> **Important pour le projet**  
+> - Le statut code doit être exact, conforme à la situation (200, 404, 405, 413, 500, etc.).  
+> - Le corps de la réponse peut être un fichier statique, le résultat d’un CGI, 
+une page d’erreur, etc.
+
+---
+
+## 3. Les méthodes HTTP
+
+HTTP/1.1 définit plusieurs méthodes. Pour ton projet, tu dois au moins prendre en charge :
+
+- **GET** : Récupérer une ressource.  
+- **POST** : Envoyer des données au serveur (typiquement pour créer ou mettre à jour une ressource).  
+- **DELETE** : Supprimer la ressource désignée.
+
+D’autres méthodes importantes (mais pas forcément obligatoires pour toi) :
+
+- **HEAD** : Identique à GET mais sans le corps dans la réponse (sert à obtenir les meta-infos).  
+- **PUT** : Comme POST, mais sémantique de « remplacement de ressource ».  
+- **OPTIONS** : Pour interroger les capacités de communication.  
+- **TRACE**, **CONNECT**, etc. (moins courantes, souvent désactivées pour raisons de sécurité).
+
+> **Important pour le projet**  
+> - Vérifier la méthode demandée. Si elle n’est pas autorisée sur la route, renvoyer 405 Method Not Allowed.
+
+---
+
+## 4. Headers importants et leur signification
+
+Les en-têtes (headers) fournissent des informations supplémentaires sur la requête ou la réponse. 
+En voici quelques-uns qu’il est crucial de comprendre :
+
+1. **Host** (Requête)  
+- En HTTP/1.1, l’entête `Host` est obligatoire.  
+- Permet de distinguer des virtual hosts (plusieurs sites sur la même IP/port).
+
+2. **Connection** (Requête/Réponse)  
+- `keep-alive` ou `close`.  
+- `keep-alive` indique que la connexion restera ouverte pour d’autres requêtes, évitant de rouvrir un socket à chaque requête.  
+- `close` force la fermeture de la connexion après la réponse.
+
+3. **Content-Length** (Requête/Réponse)  
+- Indique la taille exacte du corps (body) en octets.  
+- Si absent, on peut utiliser le transfert en chunked.
+
+4. **Transfer-Encoding** (Requête/Réponse)  
+- Principalement `chunked`.  
+- Signifie que le corps est envoyé en plusieurs morceaux (chunks), chacun précédé d’une 
+  taille hexadécimale.  
+- À la fin, un chunk de taille `0` indique la fin du contenu.
+
+5. **Content-Type** (Requête/Réponse)  
+- Indique le type MIME du corps (`text/html`, `image/png`, `application/json`, etc.).  
+- Permet au client ou au serveur de savoir comment interpréter le contenu.
+
+6. **Accept**, **Accept-Language**, **Accept-Encoding** (Requête)  
+- Spécifient les formats que le client peut gérer (HTML, JSON, gzip, etc.).  
+- Pour ton serveur, tu peux simplifier et répondre comme tu veux, mais c’est bon de savoir.
+
+7. **Location** (Réponse)  
+- Utilisé pour les redirections (ex. `HTTP/1.1 301 Moved Permanently` avec `Location: https://nouvelle-adresse`).  
+- Également renvoyé pour certaines créations de ressources (`201 Created`).
+
+8. **Allow** (Réponse)  
+- Si tu renvoies 405 Method Not Allowed, tu devrais spécifier dans le header `Allow` la 
+  liste des méthodes autorisées.
+
+---
+
+## 5. Gestion de la connexion : keep-alive ou non
+
+Par défaut, en HTTP/1.1, la connexion est persistante (« keep-alive ») sauf indication contraire.  
+- **Avantage** : moins de connexions TCP, gain de performance.  
+- **À faire côté serveur** : 
+- Tant que le client envoie de nouvelles requêtes, tu peux continuer à lire depuis le même socket.  
+- Si `Connection: close` est présent, le serveur doit fermer la connexion après la réponse.
+
+> **Important pour le projet**  
+> - Gérer la persistance des connexions (si le client n’envoie plus rien, tu fermes au bout d’un certain temps).  
+> - Faire attention aux timeouts et à la boucle poll() pour ne pas garder un socket inactif indéfiniment.
+
+---
+
+## 6. Codes de statut HTTP
+
+Les codes de statut sont classés en cinq grandes catégories :
+
+1. **1xx** : Informational (rarement utilisés, ex. 100 Continue)  
+2. **2xx** : Success (ex. `200 OK`, `201 Created`, `204 No Content`)  
+3. **3xx** : Redirection (ex. `301 Moved Permanently`, `302 Found`, `307 Temporary Redirect`)  
+4. **4xx** : Client Error (ex. `400 Bad Request`, `403 Forbidden`, `404 Not Found`, `405 Method Not Allowed`, 
+`413 Payload Too Large`)  
+5. **5xx** : Server Error (ex. `500 Internal Server Error`, `502 Bad Gateway`, `503 Service Unavailable`)
+
+Pour ton projet :
+
+- **200 OK** : si tout se passe bien.  
+- **404 Not Found** : fichier/ressource introuvable.  
+- **405 Method Not Allowed** : méthode non gérée par ta route.  
+- **413 Payload Too Large** : si la taille du body dépasse la limite autorisée.  
+- **500 Internal Server Error** : en cas de souci interne (ex. plantage d’un CGI).  
+- **501 Not Implemented** : si tu ne gères pas encore une méthode comme `PUT` ou `PATCH`. 
+(Optionnel : certains serveurs renvoient 405 à la place.)
+
+---
+
+## 7. Body et encodages : Content-Length / Chunked Transfer
+
+### 7.1 Content-Length
+
+- Indique le nombre d’octets précis dans le corps.
+- Tu dois t’assurer de lire exactement ce nombre d’octets depuis le socket si c’est le client qui envoie un body.
+- Côté réponse, ton serveur doit annoncer la taille si tu l’as calculée (ex. en lisant un fichier).
+
+### 7.2 Chunked Transfer Encoding
+
+- Au lieu de fournir `Content-Length`, la réponse (ou la requête) est envoyée en plusieurs « chunks ».  
+- Chaque chunk commence par un nombre hexadécimal (la taille du chunk), suivi d’un `CRLF`, puis le chunk de données, 
+puis encore un `CRLF`.  
+- Un chunk de taille 0 indique la fin.  
+- Avantage : le serveur peut commencer à envoyer sans connaître la taille totale à l’avance (streaming).
+
+> **Important pour le projet**  
+> - Tu dois être capable de parser le chunked si tu veux traiter correctement les requêtes POST chunkées 
+(ou, a minima, tu peux refuser si non géré).  
+> - Pour la réponse, c’est parfois plus simple d’envoyer `Content-Length`. Le chunked est optionnel, 
+sauf si c’est imposé dans ta configuration.
+
+---
+
+## 8. Gérer les hôtes virtuels (virtual hosts)
+
+En HTTP/1.1, on utilise `Host: example.org` pour savoir quel site le client veut atteindre.  
+- Sur un seul serveur physique (ou une seule IP), plusieurs sites peuvent coexister.  
+- Dans le cadre de ton webserv, tu liras cet header pour déterminer quelle configuration de “server” 
+appliquer.  
+- **Le premier server** pour un `host:port` donné est en général le serveur par défaut si aucun 
+`server_name` ne matche.
+
+---
+
+## 9. Cookies et sessions (optionnel, mais mention utile)
+
+- **Set-Cookie** : le serveur peut envoyer un cookie.  
+- **Cookie** : le client renvoie ce cookie dans ses requêtes suivantes.  
+- Permet de maintenir une session (même si HTTP est un protocole stateless).
+
+Pour ton projet, c’est éventuellement un bonus si tu implémentes la gestion de session.
+
+---
+
+## 10. Sécurité et considérations diverses
+
+- **Headers d’autorisation** : `Authorization: Basic ...` ou `Bearer ...`, etc. — utiles si tu veux 
+protéger une ressource.  
+- **HTTP vs HTTPS** : HTTPS ajoute une couche SSL/TLS, mais en général ça sort du scope du projet 
+42 Webserv (sauf mention contraire).  
+- **Respect de la norme** : beaucoup de navigateurs sont tolérants, mais essaie de suivre au maximum 
+la RFC pour éviter des comportements inattendus.
+
+---
+
+## 11. Synthèse pour ton projet
+
+En pratique, pour implémenter un serveur HTTP minimal (HTTP/1.1) :
+
+1. **Parser la requête**  
+- Lire la première ligne -> extraire la méthode, le path (URI), la version.  
+- Lire les headers -> stocker `Host`, `Content-Length`, etc.  
+- Lire le body -> faire attention à la taille ou au chunked.  
+
+2. **Déterminer la réponse**  
+- Faire correspondre le path à un fichier ou un dossier (ou un CGI).  
+- Gérer la méthode :  
+  - `GET` : renvoyer le fichier ou la liste d’un répertoire si autoindex.  
+  - `POST` : traiter l’upload ou exécuter un CGI, etc.  
+  - `DELETE` : supprimer un fichier.  
+- Construire la réponse (Status-Line + headers + body).  
+
+3. **Émettre la réponse**  
+- Soit tu envoies tout d’un coup (avec `Content-Length`) si tu connais la taille.  
+- Soit en chunked si tu ne la connais pas.  
+
+4. **Gérer le keep-alive**  
+- Selon `Connection: keep-alive` ou `Connection: close`, soit tu restes à l’écoute sur la socket 
+  pour d’autres requêtes, soit tu fermes après avoir fini.  
+
+5. **Codes de retour précis**  
+- 200 OK (fichier trouvé), 404 Not Found (fichier manquant), 405 Method Not Allowed (mauvaise méthode), 
+  500 Internal Server Error (erreur CGI, par ex.), etc.
+
+---
+
+### Sources et Fiabilité
+
+- **RFC 2616** (obsolète mais la base) : 
+[RFC 2616 (obsolète)](https://datatracker.ietf.org/doc/html/rfc2616)  
+- **Nouvelles RFC** :  
+- [RFC 7230 : Message Syntax](https://datatracker.ietf.org/doc/html/rfc7230)  
+- [RFC 7231 : Semantics and Content](https://datatracker.ietf.org/doc/html/rfc7231)  
+- [RFC 7232 : Conditional Requests](https://datatracker.ietf.org/doc/html/rfc7232)  
+- [RFC 7233 : Range Requests](https://datatracker.ietf.org/doc/html/rfc7233)  
+- [RFC 7234 : Caching](https://datatracker.ietf.org/doc/html/rfc7234)  
+- [RFC 7235 : Authentication](https://datatracker.ietf.org/doc/html/rfc7235)
+
+
+### Conclusion
+
+Pour créer ton propre serveur HTTP, retiens bien :
+1. La **structure** de la requête (ligne de requête + headers + body).  
+2. La **structure** de la réponse (ligne de statut + headers + body).  
+3. Les **différents codes de statut** et leur signification.  
+4. L’aspect **non-bloquant** et la gestion **keep-alive**.  
+5. Les **méthodes** HTTP requises (GET, POST, DELETE) et comment gérer leurs spécificités 
+(upload, suppression de fichiers, etc.).
+
+Une fois ces bases comprises, tu pourras manipuler les sockets, le `poll()` 
+(ou select/kqueue/epoll) et implémenter les mécanismes d’envoi/réception 
+en respectant la RFC. Bonne lecture et bon courage !
+
+
