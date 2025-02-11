@@ -1,0 +1,18 @@
+
+1 client class 
+    link it to the Process class
+    close connetion when server goes off 
+    Needs to add send,write,receive methods 
+
+2 Process class 
+    Handle data transfered
+    Handle Clients class
+    Handle Clients deconetion
+
+3 HTTP parsing
+    GET POST DELETE
+    regex for head/body
+
+4 CGI 
+    What the hell ?
+    When it goes inside ? 
