@@ -69,8 +69,15 @@ struct LocationConfig {
     bool _sendfile;
     std::string _download_dir;
     std::string _php_cgi_path;
+    // New members for extra directives
+    bool _alias;                   // flag set by "alias"
+    int _client_body_buffer_size;  // set by "client_body_buffer_size"
+    std::string _cgi_pass;         // set by "cgi_pass"
+    // Nested location blocks
+    std::vector<LocationConfig> _nested_locations;
 
-    LocationConfig() : _auto_index(false), _sendfile(false) {}
+    LocationConfig() : _auto_index(false), _sendfile(false), _alias(false),
+                       _client_body_buffer_size(0) {}
 };
 
 struct ServerConfig {
@@ -104,7 +111,6 @@ struct HttpConfig {
 // Functions to process directives in a "location" block
 // ------------------------------------------------------------------
 
-// Each function takes a reference to a LocationConfig and a vector of tokens.
 void setLocationPath(LocationConfig &loc, const std::vector<std::string>& parts) {
     if (parts.size() >= 2)
         loc._path = parts[1];
@@ -148,6 +154,23 @@ void setLocationDownloadDir(LocationConfig &loc, const std::vector<std::string>&
 void setLocationPhpCgiPath(LocationConfig &loc, const std::vector<std::string>& parts) {
     if (parts.size() >= 2)
         loc._php_cgi_path = parts[1];
+}
+
+// New directive: alias (flag only)
+void setLocationAlias(LocationConfig &loc, const std::vector<std::string>& /*parts*/) {
+    loc._alias = true;
+}
+
+// New directive: client_body_buffer_size
+void setLocationClientBodyBufferSize(LocationConfig &loc, const std::vector<std::string>& parts) {
+    if (parts.size() >= 2)
+        loc._client_body_buffer_size = std::atoi(parts[1].c_str());
+}
+
+// New directive: cgi_pass
+void setLocationCgiPass(LocationConfig &loc, const std::vector<std::string>& parts) {
+    if (parts.size() >= 2)
+        loc._cgi_pass = parts[1];
 }
 
 // ------------------------------------------------------------------
@@ -283,6 +306,10 @@ LocationConfig parseLocation(std::ifstream &in, const std::string &firstLine)
     locationDirectives["sendfile"] = setLocationSendfile;
     locationDirectives["download_dir"] = setLocationDownloadDir;
     locationDirectives["php_cgi_path"] = setLocationPhpCgiPath;
+    // New directives
+    locationDirectives["alias"] = setLocationAlias;
+    locationDirectives["client_body_buffer_size"] = setLocationClientBodyBufferSize;
+    locationDirectives["cgi_pass"] = setLocationCgiPass;
 
     std::string line;
     bool closingFound = false;
@@ -295,6 +322,12 @@ LocationConfig parseLocation(std::ifstream &in, const std::string &firstLine)
         {
             closingFound = true;
             break;
+        }
+        // Handle nested location block
+        if (line.find("location") == 0) {
+            LocationConfig nestedLoc = parseLocation(in, line);
+            loc._nested_locations.push_back(nestedLoc);
+            continue;
         }
         std::vector<std::string> parts = split(line);
         if (parts.empty())
@@ -341,7 +374,7 @@ ServerConfig parseServer(std::ifstream &in)
             closingFound = true;
             break;
         }
-        // Detect nested location block.
+        // Detect nested location block inside server block.
         if (line.find("location") == 0)
         {
             LocationConfig loc = parseLocation(in, line);
@@ -482,9 +515,18 @@ int main(int argc, char **argv)
         std::cout << "  client_max_body_size: " << servers[i]._client_max_body_size << "\n";
         std::cout << "  Number of locations: " << servers[i]._location.size() << "\n";
         for (size_t j = 0; j < servers[i]._location.size(); ++j) {
-            std::cout << "    Location " << j + 1 << " (match: " 
+            std::cout << "    Location " << j + 1 << " (match: "
                       << servers[i]._location[j]._location_match << ") - root: "
                       << servers[i]._location[j]._root << "\n";
+            // Optionally, print nested locations if any.
+            if (!servers[i]._location[j]._nested_locations.empty()) {
+                std::cout << "      Nested locations: " << servers[i]._location[j]._nested_locations.size() << "\n";
+                for (size_t k = 0; k < servers[i]._location[j]._nested_locations.size(); ++k) {
+                    std::cout << "        Nested Location " << k + 1 << " (match: "
+                              << servers[i]._location[j]._nested_locations[k]._location_match << ") - root: "
+                              << servers[i]._location[j]._nested_locations[k]._root << "\n";
+                }
+            }
         }
         std::cout << "\n";
     }
