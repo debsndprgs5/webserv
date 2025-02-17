@@ -4,12 +4,17 @@ SRC = Sources/Client.cpp \
 	Sources/Tools.cpp \
 	Sources/TestConfig.cpp \
 	Sources/main.cpp \
-		
+	Sources/Parser/Parser.cpp \
+	Sources/Parser/Utils.cpp \
+	Sources/Parser/LocationParser.cpp \
+	Sources/Parser/ServerParser.cpp \
+	Sources/Parser/HttpParser.cpp \
+	
 
 OBJ = $(SRC:.cpp=.o)
 OBJS=$(OBJ)
 
-FLAGS = g++ -Wall -Wextra -Werror --std=c++98 -g -fsanitize=address
+FLAGS = c++ -Wall -Wextra -Werror --std=c++98 -g -fsanitize=address
 
 NAME = WebServ
 
