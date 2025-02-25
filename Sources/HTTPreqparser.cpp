@@ -70,6 +70,9 @@ bool parseHttpRequest(const std::string &rawRequest, HttpRequest &request) {
 
 
 // Example usage.
+
+// Fonction principale prend la string de la requete brute et une struct httprequest vide initialisée
+
 // Exemple d'une requête HTTP brute.
 //    std::string rawRequest = "POST /submit-form HTTP/1.1\r\n"
 //                             "Host: example.com\r\n"
