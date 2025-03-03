@@ -140,7 +140,7 @@ unsigned int Server::getSocketLen()const{
 void Server::printServ(){
 	Log("----------------Printing server-------------");
 	Log("SERVER NAME " + _name);
-	if(_host)
+	if(_host != NULL)
 		Log ("HOST : " + _host);
 	Log("IP ADRS : " + _ipAdrs);
 	Log("Ports : ");

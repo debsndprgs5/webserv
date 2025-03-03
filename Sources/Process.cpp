@@ -15,13 +15,13 @@ Process::~Process(){
 }
 
 //Accept a socket for new client and says hi to it
-void Process::acceptNewClient(struct pollfd &it, std::vector<struct pollfd> &pendingClients){
+void Process::acceptNewClient(struct pollfd &it, std::vector<struct pollfd> &pendingClients, Server *server){
 		int SocketClient = accept(it.fd, NULL, NULL);
 		if (SocketClient < 0){
 			std::cerr << "Error accepting connection"<< std::endl;
 			return ;
 		}
-		Client *current = new Client(SocketClient);
+		Client *current = new Client(SocketClient, server);
 		struct pollfd fds;
 		fds.fd= current->getSocketClient();
 		fds.events = POLLIN;
@@ -83,12 +83,14 @@ void Process::mainLoop(){
 			if(run == true)
 				ExitWithMessage(1,"poll is doing his best....");
 		}
-		for(std::vector<struct pollfd>::iterator it= _fdArray.begin();it != _fdArray.end(); it++){
-			if(it->revents & POLLIN){
-				if(_MappedServ.find(it->fd) != _MappedServ.end())
-					acceptNewClient(*it, pendingClients);
-				else if(_MappedClient.find(it->fd) != _MappedClient.end() && !isPendingDeco(*it, pendingDeco) )
+		for (std::vector<struct pollfd>::iterator it = _fdArray.begin(); it != _fdArray.end(); ++it) {
+			if (it->revents & POLLIN) {
+				std::map<int, Server*>::iterator itServ = _MappedServ.find(it->fd);
+				if (itServ != _MappedServ.end()) {
+					acceptNewClient(*it, pendingClients, itServ->second);
+				} else if (_MappedClient.find(it->fd) != _MappedClient.end() && !isPendingDeco(*it, pendingDeco)) {
 					handleData(*it, pendingDeco);
+				}
 			}
 		}
 		for(std::vector<struct pollfd>::iterator it= pendingDeco.begin(); it != pendingDeco.end(); it++){

@@ -9,6 +9,7 @@ class Client{
     std::string _request;
 
     public :
+    Server *_server;
     Client();
     ~Client();
     Client(int socket);
