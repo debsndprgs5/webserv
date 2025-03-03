@@ -46,8 +46,6 @@ bool Process::isPendingDeco(struct pollfd &current, std::vector<struct pollfd> &
 
 void Process::handleData(struct pollfd &it, std::vector<struct pollfd> &pendingDeco){
 
-	//std::string buffer;
-	//buffer.resize(1024);
 	char buffer[1024] = {0};
 	int bytesRecv = recv(it.fd, buffer, 1024, 0);
 	if(bytesRecv < 0){
@@ -61,14 +59,20 @@ void Process::handleData(struct pollfd &it, std::vector<struct pollfd> &pendingD
 		pendingDeco.push_back(tmp);
 	}
 	else{
-		//buffer.resize(bytesRecv);
 		std::cout << "Received from client : " << buffer <<std::endl;
 		send(it.fd, RESPONSE.c_str(), RESPONSE.length(), 0);
+		// for(std::map<int, *Client>::iterator itMap = _MappedClient.begin(); itMap != _MappedClient.end(); itMap++){
+		// 	if(itMap->first == it.fd) client found in client_data_base
+		// 		if(it.Map->second.fillRequest()) request added to client and if full 
+		//			proccessData(); HTTP dialogue
+		// 
+		//}
 	}
 }
 
 //Call poll on _FdArray, if POLLIN is recived : new connection, 
 void Process::mainLoop(){
+	run = true;
 	signal(SIGINT, sigHandler);//Allow exit with ctrlC
 	std::vector<struct pollfd> pendingClients;//Tracks of the new clients for outside loop
 	std::vector<struct pollfd> pendingDeco;//fd_array that need to be remove outside loop
@@ -93,7 +97,6 @@ void Process::mainLoop(){
 			_MappedClient.erase(it->fd);
 		//	delete pendingDeco[it->fd];
 		//	_fdArray.erase(it);
-			perror("*POLL_HUP");
 		}
 	_fdArray.insert(_fdArray.end(), pendingClients.begin(), pendingClients.end());
 	pendingClients.clear();
@@ -103,29 +106,29 @@ void Process::mainLoop(){
 
 
 // Test the serverS and add it to the containerS, if unvalid server , goes to the next one 
-int Process::start(Config *conf, int len){			
+int Process::start(std::vector<ServerConfig> servers){			
 	Server* current;	
-	for(int i = 0; i < len; i++){
-		current = new Server(conf[i]);
+	for(size_t i=0; i < servers.size(); i++){
+		current = new Server(servers[i]);
 		int tmp = current->startServer();
 		if(tmp != 0)
 			delete current;
 		else{
 			_servArray.push_back(current);
+			for(std::vector<int>::iterator it = current->_sockets.begin(); it != current->_sockets.end(); it ++){
 			struct pollfd fds;
-			fds.fd = _servArray.back()->getSocket();
+			fds.fd = *it;
 			fds.events = POLLIN;
 			_fdArray.push_back(fds);
+			_MappedServ[fds.fd] = current;//link the socket sever to the object server
+			}
+
 		}
 	}
-	if (_servArray.empty() || (_servArray.size() != _fdArray.size())){
+	if (_servArray.empty()){
 		freeProcess();
 		ExitWithMessage(1,"Unable to process any Servers");
 	}
-	for(size_t ii=0; ii < _fdArray.size(); ii++){
-		_MappedServ[_fdArray[ii].fd] = _servArray[ii];
-	}
-	run = true;
 	return 0;
 }
 

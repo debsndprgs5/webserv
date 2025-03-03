@@ -1,12 +1,15 @@
 #include "../../Includes/Parser.hpp"
-
+#include "../../Includes/Process.hpp"
 // ------------------------------------------------------------------
 // Main parsing entry point
 // ------------------------------------------------------------------
 
-int Parse(char *file)
+int main(int argc, char **argv)
 {
-    std::ifstream infile(file);
+	if(argc != 2)
+		ExitWithMessage(1, "Wrong Numbers of Arguments, only one config file");
+
+    std::ifstream infile(argv[1]);
     if (!infile) {
         std::cerr << "Error: config file not found" << std::endl;
         return 1;
@@ -70,6 +73,7 @@ int Parse(char *file)
         std::cout << "  listen ports: ";
         for (std::vector<int>::iterator it = servers[i]._listen.begin(); it != servers[i]._listen.end(); ++it)
             std::cout << *it << " ";
+        std::cout << "  Ip address: " << servers[i]._host << " | " << servers[i]._ipAdr<< std::endl;
         std::cout << "\n";
         std::cout << "  root: " << servers[i]._root << "\n";
         std::cout << "  client_max_body_size: " << servers[i]._client_max_body_size << "\n";
@@ -98,5 +102,13 @@ int Parse(char *file)
     std::cout << "\n";
     std::cout << "  client_max_body_size: " << httpConfig._client_max_body_size << "\n";
 
+
+	//Start of processing
+		Process Proc;
+		if(Proc.start(servers)){
+			return 1;
+		}
+		Proc.mainLoop();
+	
     return 0;
 }

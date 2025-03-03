@@ -5,8 +5,10 @@
 // ------------------------------------------------------------------
 
 void setServerHost(ServerConfig &server, const std::vector<std::string>& parts) {
-    if (parts.size() >= 2)
+    if (parts.size() >= 2){
         server._host = std::strtoul(parts[1].c_str(), NULL, 10);
+        server._ipAdr = parts[1];
+    }    //Store also as std::String
 }
 
 void setServerListen(ServerConfig &server, const std::vector<std::string>& parts) {

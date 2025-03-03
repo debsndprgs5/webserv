@@ -1,7 +1,6 @@
 #pragma once 
 
 #include "Server.hpp"
-#include "TestConfig.hpp"
 #include "Client.hpp"
 #include "Tools.hpp"
 #include <vector>
@@ -11,7 +10,7 @@
 #include <cstdio>
 class Server;
 class Client;
-class Config;
+
 
 
 
@@ -39,7 +38,7 @@ class Process{
     void acceptNewClient(struct pollfd &it, std::vector<struct pollfd> &pendingClients);
     void handleData(struct pollfd &it, std::vector<struct pollfd> &pendingDeco);
     void freeProcess();
-    int start(Config *conf, int len);
+    int  start(std::vector<ServerConfig> servers);
     void setRunning();
     static Process* getInstance();
     bool isPendingDeco(struct pollfd &current, std::vector<struct pollfd> &pendingDeco);

@@ -2,7 +2,6 @@ SRC = Sources/Client.cpp \
 	Sources/Server.cpp \
 	Sources/Process.cpp\
 	Sources/Tools.cpp \
-	Sources/TestConfig.cpp \
 	Sources/main.cpp \
 	Sources/Parser/Parser.cpp \
 	Sources/Parser/Utils.cpp \

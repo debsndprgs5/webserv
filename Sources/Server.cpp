@@ -5,12 +5,12 @@ Server::Server(){
 }
 
 Server::~Server(){
-	std::cout << _Name << " ending service ...." << std::endl;
+	std::cout << _name << " ending service ...." << std::endl;
 	endServer();
 }
 
 //Config all variables according to Config item
-Server::Server(Config Conf){
+Server::Server(ServerConfig Conf){
 	this->setConfig(Conf);
 }
 
@@ -18,76 +18,138 @@ Server::Server(const Server &cpy){
 	*this=cpy;
 }
 
-Server &Server::operator=(const Server &cpy){
-	_Name = cpy._Name;
-	_IpAdrss = cpy._IpAdrss;
-	_Ports = cpy._Ports;
-	_Socket = cpy._Socket;
-	_SocketAddress = cpy._SocketAddress;
-	_SocketLen = cpy._SocketLen;
+Server &Server::operator=(const Server &Conf){
+	_name = Conf._name;
+	_ipAdrs = Conf._ipAdrs;
+	_host = Conf._host;
+	_ports = Conf._ports;
+	_locations = Conf._locations;
+	_methods = Conf._methods;
+	_error_page = Conf._error_page;
+	_root = Conf._root;
+	_access_log = Conf._access_log;
+	_client_max_body_size = Conf._client_max_body_size;
+	_download_dir = Conf._download_dir;
+	_sendfile = Conf._sendfile;
+	_php_cgi_path = Conf._php_cgi_path;
+	_sockets = Conf._sockets;
+	_socketAddress = Conf._socketAddress;
+	_socketLen = Conf._socketLen;
 	return *this;
 }
 
-void Server::setConfig(Config Conf){
-	_Name = Conf.getName();
-	_IpAdrss = Conf.getIp();
-	_Ports = Conf.getPort();
-	memset(&_SocketAddress, 0, sizeof(_SocketAddress));
-	_SocketLen = sizeof(struct sockaddr_in);
-	_SocketAddress.sin_family = AF_INET;
-	_SocketAddress.sin_port= htons(_Ports);
-	
+void Server::setConfig(ServerConfig Conf){
+	_name = *Conf._server_name.begin();
+	_ipAdrs = Conf._ipAdr;
+	_host = Conf._host;
+	_ports = Conf._listen;
+	_locations = Conf._location;
+	_methods = Conf._methods;
+	_error_page = Conf._error_page;
+	_root = Conf._root;
+	_access_log = Conf._access_log;
+	_client_max_body_size = Conf._client_max_body_size;
+	_download_dir = Conf._download_dir;
+	_sendfile = Conf._sendfile;
+	_php_cgi_path = Conf._php_cgi_path;
+	memset(&_socketAddress, 0, sizeof(_socketAddress));
+	_socketLen = sizeof(struct sockaddr_in);
+	_socketAddress.sin_family = AF_INET;
+	_socketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
 }
 
 
 //Tries to create a new Socket(for Server), bind and listen in order to all be setup
+//Loop logic to modify a bit, check ip before loop
+//if error log then continue, else pushback();
+//if _sockets empty end server 
 int Server::startServer(){
-	std::cout << "Starting new server named : " << _Name << std::endl;
-	_Socket = socket(AF_INET, SOCK_STREAM, 0);
-	if (_Socket < 0){
-		return (ReturnWithMessage(1,_Name+": Can't create socket"));
+	std::cout << "Starting new server named : " << _name << std::endl;
+	for(std::vector<int>::iterator it = _ports.begin(); it != _ports.end(); it ++){
+
+		int newSock = socket(AF_INET, SOCK_STREAM, 0);
+		_socketAddress.sin_port = htons(*it);
+		if (newSock < 0){
+			Log(_name+": Can't create newSocket");
+			continue;
+		}
+		if(_ipAdrs.empty()||inet_pton(AF_INET, _ipAdrs.c_str(), &_socketAddress.sin_addr) <= 0){
+			close(newSock);
+			Log(_name+": Invalid IP address");
+			std::cout << _ipAdrs << std::endl;
+			continue;
+		}
+	
+		if (bind(newSock, (struct sockaddr *)&_socketAddress, _socketLen) < 0){
+			close(newSock);
+			Log(_name+": Can't bind socket to address");
+			continue;
+		}
+		if (listen(newSock, 10) < 0){
+			close(newSock);
+			Log(_name+": Socket failed to listen");
+			continue;
+		}
+		else
+			_sockets.push_back(newSock);
 	}
-	if(_IpAdrss.empty()||inet_pton(AF_INET, _IpAdrss.c_str(), &_SocketAddress.sin_addr) <= 0){
-		close(_Socket);
-		return(ReturnWithMessage(1, _Name+": Invalid IP address"));
-	}
-	if (bind(_Socket, (struct sockaddr *)&_SocketAddress, _SocketLen) < 0){
-		close(_Socket);
-		perror("BINDING");
-		return (ReturnWithMessage(1, _Name+": Can't bind soket to address"));
-	}
-	if (listen(_Socket, MAX_CLIENTS) < 0){
-		close(_Socket);
-		perror(": Socket failed to listen");
-		return (ReturnWithMessage(1, _Name+": Socket failed to listen"));
-	}
-	std::ostringstream ss;
-    ss << _Name << ": listening on " << _IpAdrss << ":" << _Ports;
-	return (ReturnWithMessage(0, ss.str()));
+	if(_sockets.empty())
+		return(ReturnWithMessage(1, _name+": Failure not avaible ports"));
+	printServ();
+	return (ReturnWithMessage(0, _name+": Succes binding sockets to server"));
 }
 
 //Close the Socket
 void Server::endServer(){
-
-	close(_Socket);
+	for(std::vector<int>::iterator it = _sockets.begin(); it != _sockets.end(); it++)
+		close(*it);
 }
 
 std::string const &Server::getName()const{
-	return _Name;
+	return _name;
 }
 
-std::string const Server::getIp()const{
-	return _IpAdrss;
+std::string const &Server::getIp()const{
+	return _ipAdrs;
 }
 
-int Server::getSocket()const{
-	return _Socket;
+std::string const &Server::getRoot()const{
+	return _root;
 }
 
-int Server::getPorts()const{
-	return _Ports;
+std::string const &Server::getDownloadDir()const{
+	return _download_dir;
+}
+
+std::string const &Server::getphpCgi()const{
+	return _php_cgi_path;
+}
+
+bool Server::getSendfile()const{
+	return _sendfile;
+}
+
+int Server::getBodySize()const{
+	return _client_max_body_size;
 }
 
 unsigned int Server::getSocketLen()const{
-	return _SocketLen;
+	return _socketLen;
+}
+
+void Server::printServ(){
+	Log("----------------Printing server-------------");
+	Log("SERVER NAME " + _name);
+	if(_host)
+		Log ("HOST : " + _host);
+	Log("IP ADRS : " + _ipAdrs);
+	Log("Ports : ");
+	for (std::vector<int>::iterator it = _ports.begin(); it != _ports.end(); it ++)
+		std::cout << *it << std::endl;
+	Log("TEST WITH LOCATIONS, any vector should be the same tough");
+	for(std::vector<LocationConfig>::iterator it = _locations.begin(); it != _locations.end(); it ++){
+		std::cout << it->_location_match <<std::endl;
+		for(std::vector<LocationConfig>::iterator nested = it->_nested_locations.begin(); nested != it->_nested_locations.end(); nested++)
+			std::cout << "		" << nested->_location_match << std::endl;
+	}
 }

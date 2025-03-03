@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -36,6 +37,7 @@ struct LocationConfig {
 
 struct ServerConfig {
     unsigned long _host;  // IP address as a number
+    std::string _ipAdr;
     std::vector<int> _listen;
     std::vector<std::string> _server_name;
     std::vector<std::string> _access_log;
