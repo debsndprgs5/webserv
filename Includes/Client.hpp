@@ -15,5 +15,5 @@ class Client{
     void setSocketClient(int socket);
     int getSocketClient();
     int fillRequest(char *buffer);
-   // std::string &getRequest();
+    std::string &getRequest();
 };

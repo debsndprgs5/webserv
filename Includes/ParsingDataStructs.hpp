@@ -36,7 +36,6 @@ struct LocationConfig {
 };
 
 struct ServerConfig {
-    unsigned long _host;  // IP address as a number
     std::string _ipAdr;
     std::vector<int> _listen;
     std::vector<std::string> _server_name;
@@ -51,7 +50,7 @@ struct ServerConfig {
     bool _sendfile;
     std::string _php_cgi_path;
 
-    ServerConfig() : _host(0), _client_max_body_size(0), _sendfile(false) {}
+    ServerConfig() : _client_max_body_size(0), _sendfile(false) {}
 };
 
 struct HttpConfig {

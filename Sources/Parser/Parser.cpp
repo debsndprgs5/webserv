@@ -73,7 +73,7 @@ int main(int argc, char **argv)
         std::cout << "  listen ports: ";
         for (std::vector<int>::iterator it = servers[i]._listen.begin(); it != servers[i]._listen.end(); ++it)
             std::cout << *it << " ";
-        std::cout << "  Ip address: " << servers[i]._host << " | " << servers[i]._ipAdr<< std::endl;
+        std::cout << "  Ip address: " << " | " << servers[i]._ipAdr<< std::endl;
         std::cout << "\n";
         std::cout << "  root: " << servers[i]._root << "\n";
         std::cout << "  client_max_body_size: " << servers[i]._client_max_body_size << "\n";

@@ -4,16 +4,12 @@
 // Functions to process directives in a "server" block
 // ------------------------------------------------------------------
 
-void setServerHost(ServerConfig &server, const std::vector<std::string>& parts) {
-    if (parts.size() >= 2){
-        server._host = std::strtoul(parts[1].c_str(), NULL, 10);
-        server._ipAdr = parts[1];
-    }    //Store also as std::String
-}
-
 void setServerListen(ServerConfig &server, const std::vector<std::string>& parts) {
     if (parts.size() >= 2)
+    {
         server._listen.push_back(parsePort(parts[1]));
+        server._ipAdr = parseIP(parts[1]);
+    }
 }
 
 void setServerName(ServerConfig &server, const std::vector<std::string>& parts) {
@@ -76,7 +72,6 @@ ServerConfig parseServer(std::ifstream &in)
     ServerConfig server;
 
     std::map<std::string, void (*)(ServerConfig&, const std::vector<std::string>&)> serverDirectives;
-    serverDirectives["host"] = setServerHost;
     serverDirectives["listen"] = setServerListen;
     serverDirectives["server_name"] = setServerName;
     serverDirectives["access_log"] = setServerAccessLog;
