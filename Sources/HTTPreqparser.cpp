@@ -4,6 +4,7 @@
 #include <map>
 #include <vector>
 #include <cstdlib>  // for atoi
+#include "ParsingDataStructs.hpp"
 
 // Utility function: trim whitespace from both ends of a string.
 std::string trim(const std::string &s) {
@@ -14,14 +15,6 @@ std::string trim(const std::string &s) {
     return s.substr(start, end - start + 1);
 }
 
-// Structure to hold a parsed HTTP request.
-struct HttpRequest {
-    std::string method;
-    std::string uri;
-    std::string version;
-    std::map<std::string, std::string> headers;
-    std::string body;
-};
 
 // Function to parse a raw HTTP request string.
 bool parseHttpRequest(const std::string &rawRequest, HttpRequest &request) {

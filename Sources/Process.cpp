@@ -60,14 +60,29 @@ void Process::handleData(struct pollfd &it, std::vector<struct pollfd> &pendingD
 	}
 	else{
 		std::cout << "Received from client : " << buffer <<std::endl;
-		send(it.fd, RESPONSE.c_str(), RESPONSE.length(), 0);
-		// for(std::map<int, *Client>::iterator itMap = _MappedClient.begin(); itMap != _MappedClient.end(); itMap++){
-		// 	if(itMap->first == it.fd) client found in client_data_base
-		// 		if(it.Map->second.fillRequest()) request added to client and if full 
-		//			proccessData(); HTTP dialogue
-		// 
-		//}
+		//send(it.fd, RESPONSE.c_str(), RESPONSE.length(), 0);
+		for(std::map<int, *Client>::iterator itMap = _MappedClient.begin(); itMap != _MappedClient.end(); itMap++){
+			if(itMap->first == it.fd) //client found in client_data_base
+				if(itMap->second.fillRequest() == true) //request added to client and if full 
+					proccessData(itMap->second, it.fd);
+		
+		}
 	}
+}
+
+void Process::proccessData(Client *client, int fd){
+	struct HttpRequest parsedRequest;
+	std::string response;
+	bool isGood = parseHttpRequest(client.getRequest(), parsedRequest);
+	Method met= Method(client, parsedRequest);
+	if(isGood == true)
+		response = met.getResponse();
+	else{
+		met.fillError(404);
+		response = met.getResponse();
+		Log("Parsed error, sending error....");
+	}
+	send(fd, response, response.length(), 0);
 }
 
 //Call poll on _FdArray, if POLLIN is recived : new connection, 

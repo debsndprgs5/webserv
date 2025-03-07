@@ -62,7 +62,7 @@ void Server::setConfig(ServerConfig Conf){
 //Tries to create a new Socket(for Server), bind and listen in order to all be setup
 //Loop logic to modify a bit, check ip before loop
 //if error log then continue, else pushback();
-//if _sockets empty end server 
+//if _sockets empty , end server 
 int Server::startServer(){
 	std::cout << "Starting new server named : " << _name << std::endl;
 	for(std::vector<int>::iterator it = _ports.begin(); it != _ports.end(); it ++){

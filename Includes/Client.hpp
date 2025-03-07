@@ -16,5 +16,7 @@ class Client{
     void setSocketClient(int socket);
     int getSocketClient();
     int fillRequest(char *buffer);
+    bool isRequestFull();
+    bool checkEnd();
    // std::string &getRequest();
 };

@@ -3,6 +3,7 @@
 #include "Server.hpp"
 #include "Client.hpp"
 #include "Tools.hpp"
+#include "Methods.hpp"
 #include <vector>
 #include <map>
 #include <poll.h>
@@ -10,6 +11,7 @@
 #include <cstdio>
 class Server;
 class Client;
+class Methods;
 
 
 

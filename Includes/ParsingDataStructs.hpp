@@ -9,6 +9,19 @@
 #include <cctype>
 #include <cstdlib> // for atoi and strtoul
 
+
+
+// Structure to hold a parsed HTTP request.
+struct HttpRequest {
+    std::string method;
+    std::string uri;
+    std::string version;
+    std::map<std::string, std::string> headers;
+    std::string body;
+};
+
+
+
 // ------------------------------------------------------------------
 // Configuration structures
 // ------------------------------------------------------------------
