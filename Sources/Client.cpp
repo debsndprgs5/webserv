@@ -4,13 +4,33 @@ Client::Client(){
 
 }
 
-Client::Client(int socket){
+Client::Client(int socket, Server *server){
+    _server = server;
     _ClientSocket = socket;
+    Log("----------------Printing server TROUGHT CLIENT-------------");
+	Log("SERVER NAME " + _server->getName());
+	Log("IP ADRS : " + server->getIp());
+	Log("Ports : ");
+	for (std::vector<int>::iterator it = server->_ports.begin(); it != server->_ports.end(); it ++)
+		std::cout << *it << std::endl;
+	Log("TEST WITH LOCATIONS, any vector should be the same tough");
+	for(std::vector<LocationConfig>::iterator it = server->_locations.begin(); it != server->_locations.end(); it ++){
+		std::cout << it->_location_match <<std::endl;
+		for(std::vector<LocationConfig>::iterator nested = it->_nested_locations.begin(); nested != it->_nested_locations.end(); nested++)
+			std::cout << "		" << nested->_location_match << std::endl;
+	}
 }
 
 Client::~Client(){
     Log("²²²Closing client ....");
     close(_ClientSocket);
+}
+
+Client &Client::operator=(const Client &cpy){
+    _server = cpy._server;
+    _ClientSocket = cpy._ClientSocket;
+    _request = cpy._request;
+    return *this;
 }
 
 void Client::setSocketClient(int socket, Server *server){
@@ -28,8 +48,8 @@ std::string &Client::getRequest(){
 
 //stock buffer from process Return(0)->end not reach, Return(1)->end reach
 bool Client::fillRequest(char *buffer){
-    _request += buffer.c_str();
-    return (isRequestFull(_request));
+    _request += std::string(buffer);
+    return (isRequestFull());
 }
 
 //Check if the method is POST then if it's full, all other request shouldn't be chunked

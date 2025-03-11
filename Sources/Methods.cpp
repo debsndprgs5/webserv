@@ -1,15 +1,16 @@
-#include "Methods.hpp"
+#include "../Includes/Methods.hpp"
 
 
 //setup client and default errors, do the method aked by client
 //doMethod changes the variable ->response(the full message send back to internet)
-Methods::Methods(Client *client){
+Methods::Methods(Client *client, HttpRequest parsedRequest){
     _client = client;
-    _defaultErrors["500"] = "../defaultErrors/500.html"//Internal Server Error
-	_defaultErrors["400"] = "../defaultErrors/400.html";//BadRequest
-	_defaultErrors["404"] = "../defaultErrors/404.html";//NotFound
-	_defaultErrors["405"] = "../defaultErrors/405.html";//NotImplemented 
-    _defaultErrors["409"] = "../defaultErrors/409.html";//File allready exist
+    _parsedRequest = parsedRequest;
+    _defaultErrors["500"] = "defaultErrors/500.html";//Internal Server Error
+	_defaultErrors["400"] = "defaultErrors/400.html";//BadRequest
+	_defaultErrors["404"] = "defaultErrors/404.html";//NotFound
+	_defaultErrors["405"] = "defaultErrors/405.html";//NotImplemented 
+    _defaultErrors["409"] = "defaultErrors/409.html";//File allready exist
 	_allowedTypes[".php"] = "application/php";
     _allowedTypes[".js"] = "application/javascript";
     _allowedTypes[".html"] = "text/html";
@@ -19,7 +20,11 @@ Methods::Methods(Client *client){
     _allowedTypes[".jpg"] = "image/jpeg";
     _allowedTypes[".gif"] = "image/gif";
     _allowedTypes[".png"] = "image/png";
-    _allowedTypes[".txt"] = "text/plain"
+    _allowedTypes[".txt"] = "text/plain";
+    Log("Number of locations before calling doNethod: " + std::to_string(_client->_server->_locations.size()));
+    for (size_t i = 0; i < _client->_server->_locations.size(); ++i) {
+        Log("Location: " + _client->_server->_locations[i]._location_match);
+    }
 	doMethod();
 }
 
@@ -31,7 +36,7 @@ std::string &Methods::getResponse(){
     return _response;
 }
 
-bool Methods::IsMethodAllowed(std::vector<std::string> Allowed, std::string method){
+bool Methods::isMethodAllowed(std::vector<std::string> Allowed, std::string method){
     for(std::vector<std::string>::iterator it = Allowed.begin(); it != Allowed.end(); it ++){
         if(*it == method)
             return true;
@@ -42,8 +47,8 @@ bool Methods::IsMethodAllowed(std::vector<std::string> Allowed, std::string meth
 
 //If no trigger -> regluar GET or DELETE -> just search in Loc for path
 //If trigger -> POST request -> split last part to find the rigth location to add stuff 
-std::string Methods::ParsedUri(int trigger){
-    std::string path 
+std::string Methods::parsedUri(int trigger){
+    std::string path;
     if (trigger == 1) {
         size_t lastSlash = _parsedRequest.uri.find_last_of('/');
 
@@ -59,59 +64,97 @@ std::string Methods::ParsedUri(int trigger){
         }
     }
     else
-     std::string path = _client->_server->getRoot() +"/"+ _parsedRequest.uri;
+     path = _client->_server->getRoot() + _parsedRequest.uri;
+    Log("PATH DEBUGGING == " + path);
 	return path;
 }
 
 //Process all the request , set ret and response accordingly
 void Methods::doMethod(){
-
-    LocationConfig conf;
-    if(-parsedRequest.method == "POST"){
-        conf = findConfig(parsedUri(1), _client->_server->_locations);
-        if(conf == NULL)
-            fillError(404);//notFound
+    Log("Number of locations before calling findConfig: " + std::to_string(_client->_server->_locations.size()));
+    for (size_t i = 0; i < _client->_server->_locations.size(); ++i) {
+        Log("Location: " + _client->_server->_locations[i]._location_match);
+    }
+    if(_parsedRequest.method == "POST"){
+        if(findConfig(parsedUri(1), _client->_server->_locations) == NULL)
+            fillError("404");//notFound
         else
             myPost(findConfig(parsedUri(1), _client->_server->_locations), parsedUri(1));
     }
-    conf = findConfig(parsedUri(0), _client->_server->_locations);
     else if(_parsedRequest.method == "GET")
          myPost(findConfig(parsedUri(0), _client->_server->_locations), parsedUri(0));
     else if(_parsedRequest.method == "DELETE")
         myDelete(findConfig(parsedUri(0), _client->_server->_locations), parsedUri(0));
     else
-        fillError(404);//Method not implemented 
+        fillError("404");//Method not implemented 
 }
 
 //Need iterate trough Locations finding for Path, spliting each /
 // Returns the found locationConfig to access all option from specific loc
+// LocationConfig* Methods::findConfig(const std::string& requestedPath, std::vector<LocationConfig>& locations) {
+//     Log("PATH PARSED : " + requestedPath);
+//     std::string delimiter = "/";
+//     size_t pos = requestedPath.find(delimiter);
+//     std::string currentPart = requestedPath.substr(0, pos);
+//     std::string remainingPath = (pos == std::string::npos) ? "" : requestedPath.substr(pos + 1);
+//     if(!locations.empty()){
+//         for (size_t i = 0; i < locations.size(); ++i) {
+//             if (locations[i]._path == currentPart) {
+//                 if (remainingPath.empty()) {
+//                     return &locations[i]; // Return the pointer to modify the instance
+//                 }
+//                 LocationConfig* foundConfig = findConfig(remainingPath, locations[i]._nested_locations);
+//                 if (foundConfig != NULL) {
+//                     return foundConfig; // Return the instance found deeper in recursion
+//                 }
+//             }
+//         }
+//     }
+//     return NULL; // Return nullptr if no match is found
+// }
+
 LocationConfig* Methods::findConfig(const std::string& requestedPath, std::vector<LocationConfig>& locations) {
+    Log("PATH PARSED : " + requestedPath);
+
+    if (locations.empty()) {
+        Log("No locations available");
+        return NULL; // Avoid accessing empty vector
+    }
+
     std::string delimiter = "/";
     size_t pos = requestedPath.find(delimiter);
     std::string currentPart = requestedPath.substr(0, pos);
     std::string remainingPath = (pos == std::string::npos) ? "" : requestedPath.substr(pos + 1);
 
     for (size_t i = 0; i < locations.size(); ++i) {
-        if (locations[i].path == currentPart) {
+        Log("Inspecting location: " + locations[i]._location_match + " FOR path " + currentPart);
+
+        if (locations[i]._location_match == currentPart) {
             if (remainingPath.empty()) {
-                return &locations[i]; // Return the pointer to modify the instance
+                Log("Match found: " + locations[i]._location_match);
+                return &locations[i];
             }
-            LocationConfig* foundConfig = findNestedPath(remainingPath, locations[i].nestedLocations);
-            if (foundConfig != NULL) {
-                return foundConfig; // Return the instance found deeper in recursion
+
+            if (!locations[i]._nested_locations.empty()) {
+                LocationConfig* foundConfig = findConfig(remainingPath, locations[i]._nested_locations);
+                if (foundConfig != NULL) {
+                    return foundConfig;
+                }
             }
         }
     }
-    return NULL; // Return nullptr if no match is found
+
+    Log("No match found for path: " + requestedPath);
+    return NULL;
 }
 
 
 //Fill Response with content of path
 //open path put what's inside in responseBody
 //Set _response accordingly
-void Methods::myGet(LocationConfig Conf, std::string path){
+void Methods::myGet(LocationConfig *Conf, std::string path){
 
-	if(IsMethodAllowed(_client->_server.allowed, _parsedRequest.method) == true && IsMethodAllowed(Conf.allowed, _parsedRequest.method) == true)
+	if(isMethodAllowed(_client->_server->_methods, _parsedRequest.method) == true && isMethodAllowed(Conf->_methods, _parsedRequest.method) == true)
     {
         std::ifstream file(path.c_str()); // Open the file at the given path
         if (file.is_open()) {
@@ -119,81 +162,82 @@ void Methods::myGet(LocationConfig Conf, std::string path){
             contentStream << file.rdbuf(); // Stream the entire file content into the string
             file.close();
             _content = contentStream.str(); // Get the string content of the file
-            ret = 200; // OK
+            Log("CONTENT : " + _content);
+            _ret = 200; // OK
             setResponse();
             return;
         }
          else
-            fillError(404); // Not Found
+            fillError("404"); // Not Found
     }
-    fillError(400);//Methods Not allowed
+    fillError("400");//Methods Not allowed
 }
 
 //Add to path the body in serverfiles
-void Methods::myPost(LocationConfig Conf, std::string path){
+void Methods::myPost(LocationConfig *Conf, std::string path){
 	
-	if(IsMethodAllowed(_client->_server.allowed, _parsedRequest.method) == true && IsMethodAllowed(Conf.allowed, _parsedRequest.method) == true)
+	if(isMethodAllowed(_client->_server->_methods, _parsedRequest.method) == true && isMethodAllowed(Conf->_methods, _parsedRequest.method) == true)
 	{
         std::ifstream testPath(path.c_str()); // Test if path exists
         if (!testPath) {
-            fillError(404); //not found
+            fillError("404"); //not found
             return;
         }
         testPath.close();
         size_t lastDot = _safePost.find_last_of('.');
         if (lastDot == std::string::npos) {
-            fillError(400); // No extension found (Bad Request)
+            fillError("400"); // No extension found (Bad Request)
             return;
         }
         std::string ext = _safePost.substr(lastDot + 1); // Extract extension
         if (_allowedTypes.find(ext) == _allowedTypes.end()) {
-            fillError(400); // Invalid extension (Bad Request)
+            fillError("400"); // Invalid extension (Bad Request)
             return;
         }
         std::string fullFilePath = path + "/" + _safePost;
         std::ifstream existingFile(fullFilePath.c_str());
         if (existingFile.is_open()) {
             existingFile.close();
-            fillError(409); //File already exists
+            fillError("409"); //File already exists
             return;
         }
         std::ofstream newFile(fullFilePath.c_str());
         if (newFile) {
             newFile.close();
-            ret = 201;
+            _ret = 201;
             setResponse();
             return;
         } else {
-            fillError(500); // Internal Server Error
+            fillError("500"); // Internal Server Error
             return;
         }
 
 	}
-	fillError(400);//Methods Not allowed
+	fillError("400");//Methods Not allowed
 }
 
 //Rm from path in serverfiles
-void Method::myDelete(LocationConfig Conf, std::string path){
+void Methods::myDelete(LocationConfig *Conf, std::string path){
 	
-	if(IsMethodAllowed(_client->_server.allowed, _parsedRequest.method) == true && IsMethodAllowed(Conf.allowed, _parsedRequest.method) == true){
+	if(isMethodAllowed(_client->_server->_methods, _parsedRequest.method) == true && isMethodAllowed(Conf->_methods, _parsedRequest.method) == true){
         std::ifstream file(path.c_str());
         if (file.is_open()) {
             file.close(); // Close the file since it exists
             if (std::remove(path.c_str()) == 0) {
-                ret = 200; // File successfully deleted
+                _ret = 200; // File successfully deleted
                 setResponse();
                 return;
             }
             else {
-                fillError(500); // Internal Server Error: Deletion failed
+                fillError("500"); // Internal Server Error: Deletion failed
                 return;
             }
         } 
         else 
-            fillError(404); // Not Found: File does not exist
+            fillError("404"); // Not Found: File does not exist
             
 	}
-	fillError(400);//Methods Not allowed
+	fillError("400");//Methods Not allowed
 }
 
 
@@ -201,16 +245,16 @@ void Method::myDelete(LocationConfig Conf, std::string path){
 //Fill response with error_code
 //Check in server for error_code if none found uses it's mapError, opens path
 //Put what's inside in _response
-void Method::fillError(std::string error_code){
+void Methods::fillError(std::string error_code){
 
     std::string errorPagePath;
-    if (_client->_server->_errorpages.find(errorCode) != _client->_server->_errorpages.end())//error code set in conf
-        errorPagePath = _client->_server->_errorpages[errorCode];
-    else if (_defaultError.find(errorCode) != _defaultError.end())//error code found in default
-        errorPagePath = _defaultError[errorCode];
+    if (_client->_server->_error_page.find(error_code) != _client->_server->_error_page.end())//error code set in conf
+        errorPagePath = _client->_server->_error_page[error_code];
+    else if (_defaultErrors.find(error_code) != _defaultErrors.end())//error code found in default
+        errorPagePath = _defaultErrors[error_code];
     else {
-        _content = "<html><body><h1>Error " + errorCode + "</h1><p>An error occurred.</p></body></html>";
-        ret = std::atoi(errorCode.c_str()); // Set the HTTP response code
+        _content = "<html><body><h1>Error " + error_code + "</h1><p>An error occurred.</p></body></html>";
+        _ret = std::atoi(error_code.c_str()); // Set the HTTP response code
         Log("Unknow ERROR CODE, shoudln't happend code = " + error_code);
         return;
     }
@@ -221,21 +265,22 @@ void Method::fillError(std::string error_code){
         errorFile.close();
 
         _content = contentStream.str(); // Set the response body
-        ret = std::atoi(errorCode.c_str());
+        _ret = std::atoi(error_code.c_str());
     }
     else {
         // If the error file can't be opened, fallback to a generic error message
-        _content = "<html><body><h1>Error " + errorCode + "</h1><p>Unable to load the error page.</p></body></html>";
-        ret = std::atoi(errorCode.c_str());
+        _content = "<html><body><h1>Error " + error_code + "</h1><p>Unable to load the error page.</p></body></html>" + "DEBUG \n"+ errorPagePath;
+        _ret = std::atoi(error_code.c_str());
     }
     setResponse();
 }
 
 void Methods::setResponse(){
-    if(_responseBody)
+    if(!_responseBody.empty())
         _response = "ResponseBody : " + _responseBody + "\n";
-    if(_content)
+    if(!_content.empty())
         _response += "Content : " + _content + "\n";
     else if (_responseBody.empty() && _content.empty())
-        _response = "FULL SHIT BRO WHY IT'S FULL EMPTY"
+        _response = "FULL SHIT BRO WHY IT'S FULL EMPTY";
+    _response += "RET : " + _ret;
 }

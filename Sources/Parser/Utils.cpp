@@ -45,3 +45,13 @@ int parsePort(const std::string &s) {
                   << "\". Default value 0 used." << std::endl;
     return port;
 }
+
+std::string parseIP(const std::string &s)
+{
+    std::string::size_type pos = s.find(':');
+    if (pos != std::string::npos && pos <= s.size())
+    {
+        return s.substr(0, pos);
+    }
+    return "0.0.0.0";
+}

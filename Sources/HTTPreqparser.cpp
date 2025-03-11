@@ -4,10 +4,10 @@
 #include <map>
 #include <vector>
 #include <cstdlib>  // for atoi
-#include "ParsingDataStructs.hpp"
+#include "../Includes/ParsingDataStructs.hpp"
 
 // Utility function: trim whitespace from both ends of a string.
-std::string trim(const std::string &s) {
+std::string REQtrim(const std::string &s) {
     size_t start = s.find_first_not_of(" \t\r\n");
     if (start == std::string::npos)
         return "";
@@ -24,7 +24,7 @@ bool parseHttpRequest(const std::string &rawRequest, HttpRequest &request) {
     // --- Parse the request line (e.g., "GET /index.html HTTP/1.1") ---
     if (!std::getline(stream, line))
         return false;
-    line = trim(line);
+    line = REQtrim(line);
     if (line.empty())
         return false;
     std::istringstream requestLineStream(line);
@@ -34,14 +34,14 @@ bool parseHttpRequest(const std::string &rawRequest, HttpRequest &request) {
 
     // --- Parse HTTP headers ---
     while (std::getline(stream, line)) {
-        line = trim(line);
+        line = REQtrim(line);
         if (line.empty())
             break; // Fin des headers (la ligne vide sépare headers et body)
         size_t pos = line.find(':');
         if (pos == std::string::npos)
             continue;  // Ligne mal formée, on passe
-        std::string key = trim(line.substr(0, pos));
-        std::string value = trim(line.substr(pos + 1));
+        std::string key = REQtrim(line.substr(0, pos));
+        std::string value = REQtrim(line.substr(pos + 1));
         request.headers[key] = value;
     }
 

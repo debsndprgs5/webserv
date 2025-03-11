@@ -12,11 +12,12 @@ class Client{
     Server *_server;
     Client();
     ~Client();
-    Client(int socket);
-    void setSocketClient(int socket);
+    Client(int socket, Server *server);
+    Client &operator=(const Client &cpy);
+    void setSocketClient(int socket, Server *server);
     int getSocketClient();
-    int fillRequest(char *buffer);
+    bool fillRequest(char *buffer);
     bool isRequestFull();
     bool checkEnd();
-   // std::string &getRequest();
+    std::string &getRequest();
 };

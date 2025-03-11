@@ -4,6 +4,7 @@
 #include "Client.hpp"
 #include "Tools.hpp"
 #include "Methods.hpp"
+#include "ParsingDataStructs.hpp"
 #include <vector>
 #include <map>
 #include <poll.h>
@@ -13,17 +14,6 @@ class Server;
 class Client;
 class Methods;
 
-
-
-
-
-//here to have a responding website for testing
-const std::string RESPONSE =
-    "HTTP/1.1 200 OK\r\n"
-    "Content-Type: text/plain\r\n"
-    "Content-Length: 33\r\n"
-    "\r\n"
-    "THIS IS MINE BIATCH SEE THAT SHIT";
 
 /*Avoir un tableau de serv et chaque serv ses clients*/
 class Process{
@@ -37,12 +27,12 @@ class Process{
 	Process();
     ~Process();
     void mainLoop();
-    void acceptNewClient(struct pollfd &it, std::vector<struct pollfd> &pendingClients);
+    void acceptNewClient(struct pollfd &it, std::vector<struct pollfd> &pendingClients, Server *server);
     void handleData(struct pollfd &it, std::vector<struct pollfd> &pendingDeco);
     void freeProcess();
     int  start(std::vector<ServerConfig> servers);
     void setRunning();
-    static Process* getInstance();
+    void proccessData(Client *client, int fd);
     bool isPendingDeco(struct pollfd &current, std::vector<struct pollfd> &pendingDeco);
 };
 void sigHandler(int sig);

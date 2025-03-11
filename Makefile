@@ -1,13 +1,15 @@
-SRC = Sources/Client.cpp \
+SRC = Sources/HTTPreqparser.cpp \
+	Sources/Client.cpp \
 	Sources/Server.cpp \
 	Sources/Process.cpp\
 	Sources/Tools.cpp \
-	Sources/main.cpp \
 	Sources/Parser/Parser.cpp \
 	Sources/Parser/Utils.cpp \
 	Sources/Parser/LocationParser.cpp \
 	Sources/Parser/ServerParser.cpp \
 	Sources/Parser/HttpParser.cpp \
+	Sources/Methods.cpp \
+	
 	
 
 OBJ = $(SRC:.cpp=.o)

@@ -21,7 +21,6 @@ Server::Server(const Server &cpy){
 Server &Server::operator=(const Server &Conf){
 	_name = Conf._name;
 	_ipAdrs = Conf._ipAdrs;
-	_host = Conf._host;
 	_ports = Conf._ports;
 	_locations = Conf._locations;
 	_methods = Conf._methods;
@@ -41,7 +40,6 @@ Server &Server::operator=(const Server &Conf){
 void Server::setConfig(ServerConfig Conf){
 	_name = *Conf._server_name.begin();
 	_ipAdrs = Conf._ipAdr;
-	_host = Conf._host;
 	_ports = Conf._listen;
 	_locations = Conf._location;
 	_methods = Conf._methods;
@@ -140,8 +138,6 @@ unsigned int Server::getSocketLen()const{
 void Server::printServ(){
 	Log("----------------Printing server-------------");
 	Log("SERVER NAME " + _name);
-	if(_host != NULL)
-		Log ("HOST : " + _host);
 	Log("IP ADRS : " + _ipAdrs);
 	Log("Ports : ");
 	for (std::vector<int>::iterator it = _ports.begin(); it != _ports.end(); it ++)

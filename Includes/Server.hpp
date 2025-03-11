@@ -11,7 +11,7 @@
 #include "Tools.hpp"
 #include "ParsingDataStructs.hpp"
 
-#define MAX_CLIENTS 1
+#define MAX_CLIENTS 10
 
 class Server{
 	
@@ -42,16 +42,13 @@ class Server{
 	private : 
 		std::string _name;
 		std::string _ipAdrs;
-		unsigned long _host;
 		std::string _root;
 		int			_client_max_body_size;
 		std::string _download_dir;
 		std::string _php_cgi_path;
 		bool		_sendfile;
-		//long		_IncomeMsg;
 		struct sockaddr_in _socketAddress;
 		unsigned int 	_socketLen;
-		//std::string		_ServerMsg;
 
 
 };

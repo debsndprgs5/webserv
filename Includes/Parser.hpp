@@ -9,3 +9,5 @@ std::vector<std::string> split(const std::string &s);
 bool parseBool(const std::string &s);
 int parsePort(const std::string &s);
 int Parse(char *file);
+std::string parseIP(const std::string &s);
+
