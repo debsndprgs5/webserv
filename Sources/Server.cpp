@@ -22,7 +22,6 @@ Server &Server::operator=(const Server &Conf){
 	_name = Conf._name;
 	_ipAdrs = Conf._ipAdrs;
 	_ports = Conf._ports;
-	_locations = Conf._locations;
 	_methods = Conf._methods;
 	_error_page = Conf._error_page;
 	_root = Conf._root;
@@ -34,6 +33,7 @@ Server &Server::operator=(const Server &Conf){
 	_sockets = Conf._sockets;
 	_socketAddress = Conf._socketAddress;
 	_socketLen = Conf._socketLen;
+	setupLocations(Conf._locations);
 	return *this;
 }
 
@@ -41,7 +41,6 @@ void Server::setConfig(ServerConfig Conf){
 	_name = *Conf._server_name.begin();
 	_ipAdrs = Conf._ipAdr;
 	_ports = Conf._listen;
-	_locations = Conf._location;
 	_methods = Conf._methods;
 	_error_page = Conf._error_page;
 	_root = Conf._root;
@@ -54,7 +53,37 @@ void Server::setConfig(ServerConfig Conf){
 	_socketLen = sizeof(struct sockaddr_in);
 	_socketAddress.sin_family = AF_INET;
 	_socketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
+	setupLocations(Conf._location);
 }
+
+
+//Copy and returns full setup Location
+LocationConfig Server::setLocations(LocationConfig location){
+
+	LocationConfig Conf;
+	Conf = location;
+	if(Conf._root.empty())
+		Conf._root = _root;
+	if(Conf._methods.empty())
+		Conf._methods = _methods;
+	if(Conf._download_dir.empty())
+		Conf._download_dir = _download_dir;
+	if(Conf._php_cgi_path.empty())
+		Conf._php_cgi_path = _php_cgi_path;
+	if(!Conf._nested_locations.empty()){
+		for(std::vector<LocationConfig>::iterator it = location._nested_locations.begin(); it != location._nested_locations.end(); it ++){
+			Conf._nested_locations[it] = setLocations(*it);
+		}
+	}
+	return (Conf);
+}
+
+void Server::setupLocations(std::vector<LocationConfig> config){
+	for(std::vector<LocationConfig>::iterator it= config.begin(); it != config.end(); it ++){
+		_locations.push_back(setLocations(*it));
+	}
+}
+
 
 
 //Tries to create a new Socket(for Server), bind and listen in order to all be setup
@@ -91,6 +120,8 @@ int Server::startServer(){
 		else
 			_sockets.push_back(newSock);
 	}
+	if(_root.empty())
+		return(ReturnWithMessage(1, _name + ": No root define"));
 	if(_sockets.empty())
 		return(ReturnWithMessage(1, _name+": Failure not avaible ports"));
 	printServ();

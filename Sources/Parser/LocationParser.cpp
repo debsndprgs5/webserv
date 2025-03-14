@@ -143,5 +143,6 @@ LocationConfig parseLocation(std::ifstream &in, const std::string &firstLine)
     }
     if (!closingFound)
         std::cerr << "Warning: Closing brace for Location block not found. Forcing closure." << std::endl;
+	
     return loc;
 }

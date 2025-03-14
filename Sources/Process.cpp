@@ -48,10 +48,8 @@ void Process::handleData(struct pollfd &it, std::vector<struct pollfd> &pendingD
 
 	char buffer[1024] = {0};
 	int bytesRecv = recv(it.fd, buffer, 1024, 0);
-	if(bytesRecv < 0){
-		std::cout << bytesRecv << std::endl;
+	if(bytesRecv < 0)
 		Log("Error or client disconnected while receiving data");
-	}
 	else if(bytesRecv == 0){
 		Log("client disconected");
 		struct pollfd tmp;
@@ -60,7 +58,6 @@ void Process::handleData(struct pollfd &it, std::vector<struct pollfd> &pendingD
 	}
 	else{
 		std::cout << "Received from client : " << buffer <<std::endl;
-		//send(it.fd, RESPONSE.c_str(), RESPONSE.length(), 0);
 		for(std::map<int, Client*>::iterator itMap = _MappedClient.begin(); itMap != _MappedClient.end(); itMap++){
 			if(itMap->first == it.fd) //client found in client_data_base
 				if(itMap->second->fillRequest(buffer) == true) //request added to client and if full 

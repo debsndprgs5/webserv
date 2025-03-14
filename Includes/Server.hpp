@@ -33,6 +33,8 @@ class Server{
 		bool getSendfile()const;
 		int getBodySize()const;
 		unsigned int getSocketLen()const;
+		LocationConfig setLocations(LocationConfig location);
+		void setupLocations(std::vector<LocationConfig> config);
 		std::vector<LocationConfig> _locations;//Pubilc for easy acces
 		std::vector<std::string> _methods;
 		std::map<std::string, std::string> _error_page;

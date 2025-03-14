@@ -25,6 +25,7 @@ Methods::Methods(Client *client, HttpRequest parsedRequest){
     for (size_t i = 0; i < _client->_server->_locations.size(); ++i) {
         Log("Location: " + _client->_server->_locations[i]._location_match);
     }
+    handleRequest();
 	doMethod();
 }
 
@@ -44,203 +45,179 @@ bool Methods::isMethodAllowed(std::vector<std::string> Allowed, std::string meth
     return false;
 }
 
-
-//If no trigger -> regluar GET or DELETE -> just search in Loc for path
-//If trigger -> POST request -> split last part to find the rigth location to add stuff 
-std::string Methods::parsedUri(int trigger){
-    std::string path;
-    if (trigger == 1) {
-        size_t lastSlash = _parsedRequest.uri.find_last_of('/');
-
-        if (lastSlash != std::string::npos) {
-            // Store the last part of the URI (after the last '/')
-            _safePost = _parsedRequest.uri.substr(lastSlash + 1);
-            // Remove the last part from the URI path to keep only the parent directory
-            path = _client->_server->getRoot() + "/" + _parsedRequest.uri.substr(0, lastSlash);
-        } else {
-            // If no '/' is found, set _safePost to the entire URI and return only the root
-            _safePost = _parsedRequest.uri;
-            path = _client->_server->getRoot();
-        }
-    }
-    else
-     path = _client->_server->getRoot() + _parsedRequest.uri;
-    Log("PATH DEBUGGING == " + path);
-	return path;
+//Set all variable check if method is allowed
+void Methods::handleRequest(){
+	std::string searchLocationPath
+	LocationConfig config;
+    searchLocationPath = findLocationPath(_parsedRequest.uri);
+    config = findConfig(searchLocationPath, _client->_server->_locations);
+	if(config != NULL)
+		setConfig(config);
+	else 	
+		setConfig();
 }
 
-//Process all the request , set ret and response accordingly
-void Methods::doMethod(){
-    Log("Number of locations before calling findConfig: " + std::to_string(_client->_server->_locations.size()));
-    for (size_t i = 0; i < _client->_server->_locations.size(); ++i) {
-        Log("Location: " + _client->_server->_locations[i]._location_match);
-    }
-    if(_parsedRequest.method == "POST"){
-        if(findConfig(parsedUri(1), _client->_server->_locations) == NULL)
-            fillError("404");//notFound
-        else
-            myPost(findConfig(parsedUri(1), _client->_server->_locations), parsedUri(1));
-    }
-    else if(_parsedRequest.method == "GET")
-         myPost(findConfig(parsedUri(0), _client->_server->_locations), parsedUri(0));
-    else if(_parsedRequest.method == "DELETE")
-        myDelete(findConfig(parsedUri(0), _client->_server->_locations), parsedUri(0));
-    else
-        fillError("404");//Method not implemented 
+
+//Cut if more then one slash , assuming no error in uri
+std::string Methods::findLocationPath(std::string uri){
+	std::string searchPath = NULL;
+	size_t lastSlash = uri.find_last_of('/');
+	if(lastSlash == 0)
+		return (searchPath);
+	if(LastSlash != std::string::npos)
+		searchPath = uri.substr(0, lastSlash);
+	return(searchPath);
 }
 
-//Need iterate trough Locations finding for Path, spliting each /
-// Returns the found locationConfig to access all option from specific loc
-// LocationConfig* Methods::findConfig(const std::string& requestedPath, std::vector<LocationConfig>& locations) {
-//     Log("PATH PARSED : " + requestedPath);
-//     std::string delimiter = "/";
-//     size_t pos = requestedPath.find(delimiter);
-//     std::string currentPart = requestedPath.substr(0, pos);
-//     std::string remainingPath = (pos == std::string::npos) ? "" : requestedPath.substr(pos + 1);
-//     if(!locations.empty()){
-//         for (size_t i = 0; i < locations.size(); ++i) {
-//             if (locations[i]._path == currentPart) {
-//                 if (remainingPath.empty()) {
-//                     return &locations[i]; // Return the pointer to modify the instance
-//                 }
-//                 LocationConfig* foundConfig = findConfig(remainingPath, locations[i]._nested_locations);
-//                 if (foundConfig != NULL) {
-//                     return foundConfig; // Return the instance found deeper in recursion
-//                 }
-//             }
-//         }
-//     }
-//     return NULL; // Return nullptr if no match is found
-// }
 
-LocationConfig* Methods::findConfig(const std::string& requestedPath, std::vector<LocationConfig>& locations) {
-    Log("PATH PARSED : " + requestedPath);
+//Needs to add aliases
+void Methods::setConfig(){
+	_root = _client->_server->getRoot();
+	_methods = _client->_server->methods;
+	_download_dir = _client->_server->getDownloadDir();
+	_php_cgi_path = _client->_server->getphpCgi();
+}
 
-    if (locations.empty()) {
-        Log("No locations available");
-        return NULL; // Avoid accessing empty vector
+void Methods::setConfig(LocationConfig config){
+	_root = config._root;
+	_methods = config.methods;
+	_download_dir = config._download_dir;
+	_php_cgi_path = config._php_cgi_path;
+}
+
+//a tester 
+LocationConfig Methods::findConfig(std::string path, std::vector<LocationConfig> &locations){
+    if (path.empty()) {
+        // Path is empty (e.g., GET /index.html), return NULL to use root and aliases.
+        return NULL;
     }
-
+    // Split the path into segments by '/'
+    std::vector<std::string> segments;
     std::string delimiter = "/";
-    size_t pos = requestedPath.find(delimiter);
-    std::string currentPart = requestedPath.substr(0, pos);
-    std::string remainingPath = (pos == std::string::npos) ? "" : requestedPath.substr(pos + 1);
+    size_t start = 0;
+    size_t end = path.find(delimiter);
+    while (end != std::string::npos) {
+        segments.push_back(path.substr(start, end - start));
+        start = end + 1;
+        end = path.find(delimiter, start);
+    }
+    // Add the last segment (if any)
+    if (start < path.size()) {
+        segments.push_back(path.substr(start));
+    }
 
-    for (size_t i = 0; i < locations.size(); ++i) {
-        Log("Inspecting location: " + locations[i]._location_match + " FOR path " + currentPart);
-
-        if (locations[i]._location_match == currentPart) {
-            if (remainingPath.empty()) {
-                Log("Match found: " + locations[i]._location_match);
-                return &locations[i];
-            }
-
-            if (!locations[i]._nested_locations.empty()) {
-                LocationConfig* foundConfig = findConfig(remainingPath, locations[i]._nested_locations);
-                if (foundConfig != NULL) {
-                    return foundConfig;
+    // Begin correlation with LocationConfig objects
+    std::string currentPath = "/";
+    for (size_t i = 0; i < segments.size(); ++i) {
+        for (size_t j = 0; j < locations.size(); ++j) {
+            if (locations[j]._location_match == segments[i]) {
+                if (i == segments.size() - 1) {
+                    // Found a match and no more segments left
+                    return &locations[j];
+                } else if (!locations[j]._nested_locations.empty()) {
+                    // Recurse into nested locations
+                    return findConfig(path.substr(path.find(segments[i]) + segments[i].length() + 1), locations[j]._nested_locations);
                 }
             }
         }
     }
-
-    Log("No match found for path: " + requestedPath);
+    Log("FOR TEST THIS SHOUDLN'T APPEAR ?");
+    // No matching location found
     return NULL;
 }
 
-
-//Fill Response with content of path
-//open path put what's inside in responseBody
-//Set _response accordingly
-void Methods::myGet(LocationConfig *Conf, std::string path){
-
-	if(isMethodAllowed(_client->_server->_methods, _parsedRequest.method) == true && isMethodAllowed(Conf->_methods, _parsedRequest.method) == true)
-    {
-        std::ifstream file(path.c_str()); // Open the file at the given path
-        if (file.is_open()) {
-            std::ostringstream contentStream;
-            contentStream << file.rdbuf(); // Stream the entire file content into the string
-            file.close();
-            _content = contentStream.str(); // Get the string content of the file
-            Log("CONTENT : " + _content);
-            _ret = 200; // OK
-            setResponse();
-            return;
-        }
-         else
-            fillError("404"); // Not Found
-    }
-    fillError("400");//Methods Not allowed
-}
-
-//Add to path the body in serverfiles
-void Methods::myPost(LocationConfig *Conf, std::string path){
-	
-	if(isMethodAllowed(_client->_server->_methods, _parsedRequest.method) == true && isMethodAllowed(Conf->_methods, _parsedRequest.method) == true)
-	{
-        std::ifstream testPath(path.c_str()); // Test if path exists
-        if (!testPath) {
-            fillError("404"); //not found
-            return;
-        }
-        testPath.close();
-        size_t lastDot = _safePost.find_last_of('.');
-        if (lastDot == std::string::npos) {
-            fillError("400"); // No extension found (Bad Request)
-            return;
-        }
-        std::string ext = _safePost.substr(lastDot + 1); // Extract extension
-        if (_allowedTypes.find(ext) == _allowedTypes.end()) {
-            fillError("400"); // Invalid extension (Bad Request)
-            return;
-        }
-        std::string fullFilePath = path + "/" + _safePost;
-        std::ifstream existingFile(fullFilePath.c_str());
-        if (existingFile.is_open()) {
-            existingFile.close();
-            fillError("409"); //File already exists
-            return;
-        }
-        std::ofstream newFile(fullFilePath.c_str());
-        if (newFile) {
-            newFile.close();
-            _ret = 201;
-            setResponse();
-            return;
-        } else {
-            fillError("500"); // Internal Server Error
-            return;
-        }
-
+void Methods::doMethod(){
+	if(isMethodAllowed(_methods, _parsedRequest.method) == true){
+		if(_parsedRequest.method == "POST")
+			myPost();
+		if(_parsedRequest.method == "GET")
+			myGet();
+		if(_parsedRequest.methods == "DELETE")
+			myDelete();
+		else
+			fillError("501");//Not implemented
 	}
-	fillError("400");//Methods Not allowed
+	fillError("405");//Not allowed 
 }
 
-//Rm from path in serverfiles
-void Methods::myDelete(LocationConfig *Conf, std::string path){
-	
-	if(isMethodAllowed(_client->_server->_methods, _parsedRequest.method) == true && isMethodAllowed(Conf->_methods, _parsedRequest.method) == true){
-        std::ifstream file(path.c_str());
-        if (file.is_open()) {
-            file.close(); // Close the file since it exists
-            if (std::remove(path.c_str()) == 0) {
-                _ret = 200; // File successfully deleted
-                setResponse();
-                return;
-            }
-            else {
-                fillError("500"); // Internal Server Error: Deletion failed
-                return;
-            }
-        } 
-        else 
-            fillError("404"); // Not Found: File does not exist
-            
+void Methods::myPost(){
+	size_t lastSlash = _parsedRequest.uri.find_last_of('/');
+	std::string path = _root + _parsedRequest.uri.substr(0, lastSlash);
+	std::string safePost = _parsedRequest.uri.substr(lastSlash+1);
+	std::ifstream testPath(path.c_str()); // Test if path exists
+	if (!testPath) {
+		fillError("404"); //not found
+		return;
 	}
-	fillError("400");//Methods Not allowed
+	testPath.close();
+	size_t lastDot = _safePost.find_last_of('.');
+	if (lastDot == std::string::npos) {
+		fillError("400"); // No extension found (Bad Request)
+		return;
+	}
+	std::string ext = _safePost.substr(lastDot + 1); // Extract extension
+	if (_allowedTypes.find(ext) == _allowedTypes.end()) {
+		fillError("400"); // Invalid extension (Bad Request)
+		return;
+	}
+	std::string fullFilePath = path + "/" + _safePost;
+	std::ifstream existingFile(fullFilePath.c_str());
+	if (existingFile.is_open()) {
+		existingFile.close();
+		fillError("500"); //File already exists
+		return;
+	}
+	std::ofstream newFile(fullFilePath.c_str());
+	if (newFile) {
+		newFile.close();
+		_ret = 201;
+		setResponse();
+		return;
+	} else {
+		fillError("500"); // Internal Server Error
+		return;
+	}
+
 }
 
+void Methods::myGet(){
+	std::string path;
+	path = _root + _parsedRequest.uri;//Needs to do aliases
+	std::ifstream file(path.c_str()); // Open the file at the given path
+	if (file.is_open()) {
+		std::ostringstream contentStream;
+		contentStream << file.rdbuf(); // Stream the entire file content into the string
+		file.close();
+		_content = contentStream.str(); // Get the string content of the file
+		Log("CONTENT : " + _content);
+		_ret = 200; // OK
+		setResponse();
+		return;
+	}
+	else
+		fillError("404"); // Not Found
+}
 
+void Methods::myDelete(){
+
+	std::string path;
+	path = _root + _parsedRequest.uri;//Needs to check for aliases 
+	std::ifstream file(path.c_str());
+	if (file.is_open()) {
+		file.close(); // Close the file since it exists
+		if (std::remove(path.c_str()) == 0) {
+			_ret = 200; // File successfully deleted
+			setResponse();
+			return;
+		}
+		else {
+			fillError("500"); // Internal Server Error: Deletion failed
+			return;
+		}
+	} 
+	else 
+		fillError("404"); // Not Found: File does not exist        
+}
 
 //Fill response with error_code
 //Check in server for error_code if none found uses it's mapError, opens path
