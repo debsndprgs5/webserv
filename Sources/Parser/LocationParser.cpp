@@ -34,6 +34,11 @@ void setLocationIndex(LocationConfig &loc, const std::vector<std::string>& parts
         loc._index.push_back(parts[i]);
 }
 
+void setLocationAlias(LocationConfig &loc, const std::vector<std::string>& parts) {
+    if (parts.size() >= 3)
+        loc._alias[parts[1]] = parts[2];
+}
+
 void setLocationSendfile(LocationConfig &loc, const std::vector<std::string>& parts) {
     if (parts.size() >= 2)
         loc._sendfile = parseBool(parts[1]);
@@ -47,10 +52,6 @@ void setLocationDownloadDir(LocationConfig &loc, const std::vector<std::string>&
 void setLocationPhpCgiPath(LocationConfig &loc, const std::vector<std::string>& parts) {
     if (parts.size() >= 2)
         loc._php_cgi_path = parts[1];
-}
-
-void setLocationAlias(LocationConfig &loc, const std::vector<std::string>& /*parts*/) {
-    loc._alias = true;
 }
 
 void setLocationClientBodyBufferSize(LocationConfig &loc, const std::vector<std::string>& parts) {

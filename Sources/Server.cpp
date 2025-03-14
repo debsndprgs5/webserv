@@ -71,8 +71,10 @@ LocationConfig Server::setLocations(LocationConfig location){
 	if(Conf._php_cgi_path.empty())
 		Conf._php_cgi_path = _php_cgi_path;
 	if(!Conf._nested_locations.empty()){
+		size_t i = 0;
 		for(std::vector<LocationConfig>::iterator it = location._nested_locations.begin(); it != location._nested_locations.end(); it ++){
-			Conf._nested_locations[it] = setLocations(*it);
+			Conf._nested_locations[i] = setLocations(*it);
+			i++;
 		}
 	}
 	return (Conf);

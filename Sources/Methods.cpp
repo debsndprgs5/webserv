@@ -21,12 +21,11 @@ Methods::Methods(Client *client, HttpRequest parsedRequest){
     _allowedTypes[".gif"] = "image/gif";
     _allowedTypes[".png"] = "image/png";
     _allowedTypes[".txt"] = "text/plain";
-    Log("Number of locations before calling doNethod: " + std::to_string(_client->_server->_locations.size()));
-    for (size_t i = 0; i < _client->_server->_locations.size(); ++i) {
-        Log("Location: " + _client->_server->_locations[i]._location_match);
-    }
+	Log("ICI");
     handleRequest();
+	Log("LABAS");
 	doMethod();
+	Log("PARLA");
 }
 
 Methods::~Methods(){
@@ -47,8 +46,8 @@ bool Methods::isMethodAllowed(std::vector<std::string> Allowed, std::string meth
 
 //Set all variable check if method is allowed
 void Methods::handleRequest(){
-	std::string searchLocationPath
-	LocationConfig config;
+	std::string searchLocationPath;
+	LocationConfig *config;
     searchLocationPath = findLocationPath(_parsedRequest.uri);
     config = findConfig(searchLocationPath, _client->_server->_locations);
 	if(config != NULL)
@@ -64,7 +63,7 @@ std::string Methods::findLocationPath(std::string uri){
 	size_t lastSlash = uri.find_last_of('/');
 	if(lastSlash == 0)
 		return (searchPath);
-	if(LastSlash != std::string::npos)
+	if(lastSlash != std::string::npos)
 		searchPath = uri.substr(0, lastSlash);
 	return(searchPath);
 }
@@ -73,20 +72,20 @@ std::string Methods::findLocationPath(std::string uri){
 //Needs to add aliases
 void Methods::setConfig(){
 	_root = _client->_server->getRoot();
-	_methods = _client->_server->methods;
+	_methods = _client->_server->_methods;
 	_download_dir = _client->_server->getDownloadDir();
 	_php_cgi_path = _client->_server->getphpCgi();
 }
 
-void Methods::setConfig(LocationConfig config){
-	_root = config._root;
-	_methods = config.methods;
-	_download_dir = config._download_dir;
-	_php_cgi_path = config._php_cgi_path;
+void Methods::setConfig(LocationConfig *config){
+	_root = config->_root;
+	_methods = config->_methods;
+	_download_dir = config->_download_dir;
+	_php_cgi_path = config->_php_cgi_path;
 }
 
 //a tester 
-LocationConfig Methods::findConfig(std::string path, std::vector<LocationConfig> &locations){
+LocationConfig *Methods::findConfig(std::string path, std::vector<LocationConfig> &locations){
     if (path.empty()) {
         // Path is empty (e.g., GET /index.html), return NULL to use root and aliases.
         return NULL;
@@ -132,7 +131,7 @@ void Methods::doMethod(){
 			myPost();
 		if(_parsedRequest.method == "GET")
 			myGet();
-		if(_parsedRequest.methods == "DELETE")
+		if(_parsedRequest.method == "DELETE")
 			myDelete();
 		else
 			fillError("501");//Not implemented
@@ -150,17 +149,17 @@ void Methods::myPost(){
 		return;
 	}
 	testPath.close();
-	size_t lastDot = _safePost.find_last_of('.');
+	size_t lastDot = safePost.find_last_of('.');
 	if (lastDot == std::string::npos) {
 		fillError("400"); // No extension found (Bad Request)
 		return;
 	}
-	std::string ext = _safePost.substr(lastDot + 1); // Extract extension
+	std::string ext = safePost.substr(lastDot + 1); // Extract extension
 	if (_allowedTypes.find(ext) == _allowedTypes.end()) {
 		fillError("400"); // Invalid extension (Bad Request)
 		return;
 	}
-	std::string fullFilePath = path + "/" + _safePost;
+	std::string fullFilePath = path + "/" + safePost;
 	std::ifstream existingFile(fullFilePath.c_str());
 	if (existingFile.is_open()) {
 		existingFile.close();

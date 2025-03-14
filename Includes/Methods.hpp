@@ -26,7 +26,6 @@ class Methods{
     std::string &getResponse();
     void doMethod();
     bool isMethodAllowed(std::vector<std::string> Allowed, std::string method); //check if methods is allowed(Server and Location wide)
-    LocationConfig *findConfig(const std::string &requestedPath, std::vector<LocationConfig> &locations);//Returns the config if founded
     void myGet();
     void myPost();
     void myDelete();
@@ -34,7 +33,7 @@ class Methods{
 	void handleRequest();
     void setResponse();
 	void setConfig();
-	void setConfig(LocationConfig config);
+	void setConfig(LocationConfig *config);
 	std::string findLocationPath(std::string uri);
-	LocationConfig findConfig(std::string path, std::vector<LocationConfig> &locations);
+	LocationConfig *findConfig(std::string path, std::vector<LocationConfig> &locations);
 };

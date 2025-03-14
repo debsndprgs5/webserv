@@ -27,6 +27,11 @@ void setServerErrorPage(ServerConfig &server, const std::vector<std::string>& pa
         server._error_page[parts[1]] = parts[2];
 }
 
+void setServerAlias(ServerConfig &server, const std::vector<std::string>& parts) {
+    if (parts.size() >= 3)
+        server._alias[parts[1]] = parts[2];
+}
+
 void setServerAllowMethods(ServerConfig &server, const std::vector<std::string>& parts) {
     for (size_t i = 1; i < parts.size(); ++i)
         server._methods.push_back(parts[i]);
@@ -76,6 +81,7 @@ ServerConfig parseServer(std::ifstream &in)
     serverDirectives["server_name"] = setServerName;
     serverDirectives["access_log"] = setServerAccessLog;
     serverDirectives["error_page"] = setServerErrorPage;
+    serverDirectives["alias"] = setServerAlias;
     serverDirectives["allow_methods"] = setServerAllowMethods;
     serverDirectives["index"] = setServerIndex;
     serverDirectives["root"] = setServerRoot;
