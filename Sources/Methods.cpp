@@ -48,24 +48,32 @@ bool Methods::isMethodAllowed(std::vector<std::string> Allowed, std::string meth
 void Methods::handleRequest(){
 	std::string searchLocationPath;
 	LocationConfig *config;
+	Log("SEARCH PAST");
     searchLocationPath = findLocationPath(_parsedRequest.uri);
+	Log("BEFORE FINDCONFIG LOOP");
     config = findConfig(searchLocationPath, _client->_server->_locations);
+	Log("AFTER   ");
 	if(config != NULL)
 		setConfig(config);
 	else 	
 		setConfig();
+	Log("handleRequestEND");
+	
 }
 
 
 //Cut if more then one slash , assuming no error in uri
 std::string Methods::findLocationPath(std::string uri){
-	std::string searchPath = NULL;
+	std::string searchPath;
+	Log("string = NULL ?");
 	size_t lastSlash = uri.find_last_of('/');
+	Log("FIND LAST OF");
 	if(lastSlash == 0)
-		return (searchPath);
+		return ("");
+	Log("lastSlash == 0");
 	if(lastSlash != std::string::npos)
 		searchPath = uri.substr(0, lastSlash);
-	return(searchPath);
+	return("");
 }
 
 
