@@ -76,6 +76,9 @@ int main(int argc, char **argv)
         std::cout << "  Ip address: " << " | " << servers[i]._ipAdr<< std::endl;
         std::cout << "\n";
         std::cout << "  root: " << servers[i]._root << "\n";
+        std::cout << "alias : ";
+        for (std::map<std::string, std::string>::iterator it = servers[i]._alias.begin(); it != servers[i]._alias.end(); ++it)
+            std::cout << it->first << " " << it->second << "\n";
         std::cout << "  client_max_body_size: " << servers[i]._client_max_body_size << "\n";
         std::cout << "  Number of locations: " << servers[i]._location.size() << "\n";
         for (size_t j = 0; j < servers[i]._location.size(); ++j) {
