@@ -1,4 +1,5 @@
-SRC = Sources/HTTPreqparser.cpp \
+SRC = Sources/HTTP_request_parser.cpp \
+	Sources/HTTP_response_maker.cpp \
 	Sources/Client.cpp \
 	Sources/Server.cpp \
 	Sources/Process.cpp\
@@ -9,8 +10,8 @@ SRC = Sources/HTTPreqparser.cpp \
 	Sources/Parser/ServerParser.cpp \
 	Sources/Parser/HttpParser.cpp \
 	Sources/Methods.cpp \
-	
-	
+
+
 
 OBJ = $(SRC:.cpp=.o)
 OBJS=$(OBJ)
