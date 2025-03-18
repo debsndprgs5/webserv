@@ -6,11 +6,11 @@
 Methods::Methods(Client *client, HttpRequest parsedRequest){
     _client = client;
     _parsedRequest = parsedRequest;
-    _defaultErrors["500"] = "defaultErrors/500.html";//Internal Server Error
-	_defaultErrors["400"] = "defaultErrors/400.html";//BadRequest
 	_defaultErrors["404"] = "defaultErrors/404.html";//NotFound
 	_defaultErrors["405"] = "defaultErrors/405.html";//NotImplemented 
-    _defaultErrors["409"] = "defaultErrors/409.html";//File allready exist
+	_defaultErrors["413"] = "defaultErrors/413.htlm";//Payload exceeds max_body_size.
+    _defaultErrors["500"] = "defaultErrors/500.html";//Internal Server Error
+    _defaultErrors["501"] = "defaultErrors/501.html";//Not Implemented
 	_allowedTypes[".php"] = "application/php";
     _allowedTypes[".js"] = "application/javascript";
     _allowedTypes[".html"] = "text/html";
@@ -21,15 +21,15 @@ Methods::Methods(Client *client, HttpRequest parsedRequest){
     _allowedTypes[".gif"] = "image/gif";
     _allowedTypes[".png"] = "image/png";
     _allowedTypes[".txt"] = "text/plain";
-	Log("ICI");
-    handleRequest();
-	Log("LABAS");
-	doMethod();
-	Log("PARLA");
+	if(parseHttpRequest(_client->getRequest(), parsedRequest) == true){
+		Log("METHODS IS TRUE");
+    	handleRequest();
+		doMethod();
+	}
 }
 
 Methods::~Methods(){
-
+	Log("METHOD KIILED");
 }
 
 std::string &Methods::getResponse(){
@@ -48,29 +48,21 @@ bool Methods::isMethodAllowed(std::vector<std::string> Allowed, std::string meth
 void Methods::handleRequest(){
 	std::string searchLocationPath;
 	LocationConfig *config;
-	Log("SEARCH PAST");
     searchLocationPath = findLocationPath(_parsedRequest.uri);
-	Log("BEFORE FINDCONFIG LOOP");
     config = findConfig(searchLocationPath, _client->_server->_locations);
-	Log("AFTER   ");
 	if(config != NULL)
 		setConfig(config);
 	else 	
 		setConfig();
-	Log("handleRequestEND");
-	
 }
 
 
 //Cut if more then one slash , assuming no error in uri
 std::string Methods::findLocationPath(std::string uri){
 	std::string searchPath;
-	Log("string = NULL ?");
 	size_t lastSlash = uri.find_last_of('/');
-	Log("FIND LAST OF");
 	if(lastSlash == 0)
 		return ("");
-	Log("lastSlash == 0");
 	if(lastSlash != std::string::npos)
 		searchPath = uri.substr(0, lastSlash);
 	return("");
@@ -144,7 +136,8 @@ void Methods::doMethod(){
 		else
 			fillError("501");//Not implemented
 	}
-	fillError("405");//Not allowed 
+	else
+		fillError("405");//Not allowed 
 }
 
 void Methods::myPost(){
@@ -159,12 +152,12 @@ void Methods::myPost(){
 	testPath.close();
 	size_t lastDot = safePost.find_last_of('.');
 	if (lastDot == std::string::npos) {
-		fillError("400"); // No extension found (Bad Request)
+		fillError("404"); // No extension found (Bad Request)
 		return;
 	}
 	std::string ext = safePost.substr(lastDot + 1); // Extract extension
 	if (_allowedTypes.find(ext) == _allowedTypes.end()) {
-		fillError("400"); // Invalid extension (Bad Request)
+		fillError("404"); // Invalid extension (Bad Request)
 		return;
 	}
 	std::string fullFilePath = path + "/" + safePost;
@@ -180,7 +173,8 @@ void Methods::myPost(){
 		_ret = 201;
 		setResponse();
 		return;
-	} else {
+	} 
+	else {
 		fillError("500"); // Internal Server Error
 		return;
 	}

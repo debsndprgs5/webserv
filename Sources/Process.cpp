@@ -71,15 +71,16 @@ void Process::proccessData(Client *client, int fd){
 	HttpRequest parsedRequest;
 	std::string response;
 	bool isGood = parseHttpRequest(client->getRequest(), parsedRequest);
-	Methods met= Methods(client, parsedRequest);
+	Methods *met= new Methods(client, parsedRequest);
 	if(isGood == true)
-		response = met.getResponse();
+		response = met->getResponse();
 	else{
-		met.fillError("404");
-		response = met.getResponse();
+		met->fillError("404");//Parsing error ? 
+		response = met->getResponse();
 		Log("Parsed error, sending error...."+ response);
 	}
 	send(fd, response.c_str(), response.length(), 0);
+	delete met;
 }
 
 //Call poll on _FdArray, if POLLIN is recived : new connection, 
