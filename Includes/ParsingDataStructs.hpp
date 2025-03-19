@@ -21,7 +21,7 @@ struct HttpRequest {
 };
 
 bool parseHttpRequest(const std::string &rawRequest, HttpRequest &request);//Pour appeller la fonction en dehors ?
-
+std::string buildHttpResponse(const std::string& body, int statusCode, const std::string& statusMessage, const std::string& server_name, const std::string& contentType);
 
 // ------------------------------------------------------------------
 // Configuration structures

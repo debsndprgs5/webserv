@@ -21,11 +21,19 @@ Methods::Methods(Client *client, HttpRequest parsedRequest){
     _allowedTypes[".gif"] = "image/gif";
     _allowedTypes[".png"] = "image/png";
     _allowedTypes[".txt"] = "text/plain";
+	_mappedCodes[200] = "OK";
+	_mappedCodes[201] = "Created";
+	_mappedCodes[404] = "Not Found";
+	_mappedCodes[405] = "Not Implemented";
+	_mappedCodes[413] = "Paylods exceeds max_body_size";
+	_mappedCodes[500] = "Internal Server Error";
+	_mappedCodes[501] = "Not Implemented";
 	if(parseHttpRequest(_client->getRequest(), parsedRequest) == true){
 		Log("METHODS IS TRUE");
     	handleRequest();
 		doMethod();
 	}
+	
 }
 
 Methods::~Methods(){
@@ -63,8 +71,10 @@ std::string Methods::findLocationPath(std::string uri){
 	size_t lastSlash = uri.find_last_of('/');
 	if(lastSlash == 0)
 		return ("");
-	if(lastSlash != std::string::npos)
+	if(lastSlash != std::string::npos){
 		searchPath = uri.substr(0, lastSlash);
+		return searchPath;
+	}
 	return("");
 }
 
@@ -129,12 +139,16 @@ void Methods::doMethod(){
 	if(isMethodAllowed(_methods, _parsedRequest.method) == true){
 		if(_parsedRequest.method == "POST")
 			myPost();
-		if(_parsedRequest.method == "GET")
+		else if(_parsedRequest.method == "GET"){
 			myGet();
-		if(_parsedRequest.method == "DELETE")
+			Log("WE ARE IN MYGET ? ");
+		}
+		else if(_parsedRequest.method == "DELETE")
 			myDelete();
-		else
+		else{
+			Log("METHODS FUCKING WTH ME :" + _parsedRequest.method+"|");
 			fillError("501");//Not implemented
+		}
 	}
 	else
 		fillError("405");//Not allowed 
@@ -190,7 +204,6 @@ void Methods::myGet(){
 		contentStream << file.rdbuf(); // Stream the entire file content into the string
 		file.close();
 		_content = contentStream.str(); // Get the string content of the file
-		Log("CONTENT : " + _content);
 		_ret = 200; // OK
 		setResponse();
 		return;
@@ -253,12 +266,29 @@ void Methods::fillError(std::string error_code){
     setResponse();
 }
 
+std::string Methods::findWhat(){
+	if(_mappedCodes.find(_ret) != _mappedCodes.end())
+		return (_mappedCodes[_ret]);
+	return("");
+}
+
+std::string Methods::findType(std::string uri){
+	size_t lastDot = uri.find_last_of('.');
+	if(lastDot  == std::string::npos)
+		return("");//no extention
+	std::string extention = uri.substr(lastDot);
+	if(_allowedTypes.find(extention) != _allowedTypes.end())
+		return(_allowedTypes[extention]);
+	return("");
+}
+
 void Methods::setResponse(){
-    if(!_responseBody.empty())
-        _response = "ResponseBody : " + _responseBody + "\n";
-    if(!_content.empty())
-        _response += "Content : " + _content + "\n";
-    else if (_responseBody.empty() && _content.empty())
-        _response = "FULL SHIT BRO WHY IT'S FULL EMPTY";
-    _response += "RET : " + _ret;
+	std::string what = findWhat();//like "OK" or "Not Found"
+	std::string type = findType(_parsedRequest.uri);//like .php .html
+	Log("_____BEFORE CREATING RESPONSE ___________\n\n");
+	Log("_____WHAT :" + what);
+	Log("_____TYPE :" + type);
+	Log("_____CONTENT\n" + _content);
+	_response = buildHttpResponse(_content, _ret, what, _client->_server->getName(), type);
+
 }

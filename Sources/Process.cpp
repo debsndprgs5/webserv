@@ -79,6 +79,7 @@ void Process::proccessData(Client *client, int fd){
 		response = met->getResponse();
 		Log("Parsed error, sending error...."+ response);
 	}
+	//Here needs to add a check if response.length > 1024 -> boucle for 
 	send(fd, response.c_str(), response.length(), 0);
 	delete met;
 }

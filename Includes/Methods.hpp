@@ -9,9 +9,9 @@ class Methods{
     Client *_client;//also have his own reference to serv(Maybe I should put it in public ?)
     int _ret;
     HttpRequest _parsedRequest;
-	std::string _responseBody;//Headers and shit ? (idealy _responseBody + _content = _response)
     std::string _response;//The full message the server wiil send
     std::string _content;//The content use for a GET request(coud be void*?)
+    std::map<int, std::string> _mappedCodes;//Map of errorsCodes and their definitions
     std::map<std::string, std::string> _defaultErrors;//error_code and path to the page
 	std::map<std::string, std::string> _allowedTypes;
 	std::string _root;
@@ -35,5 +35,8 @@ class Methods{
 	void setConfig();
 	void setConfig(LocationConfig *config);
 	std::string findLocationPath(std::string uri);
+    std::string findWhat();
+    std::string findType(std::string uri);
 	LocationConfig *findConfig(std::string path, std::vector<LocationConfig> &locations);
+
 };
