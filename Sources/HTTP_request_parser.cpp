@@ -54,6 +54,7 @@ bool parseHttpRequest(const std::string &rawRequest, HttpRequest &request) {
             std::vector<char> buffer(contentLength);
             stream.read(&buffer[0], contentLength);
             request.body.assign(&buffer[0], contentLength);
+			request._contentLength = contentLength;
         }
     }
 

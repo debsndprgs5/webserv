@@ -18,6 +18,7 @@ struct HttpRequest {
     std::string version;
     std::map<std::string, std::string> headers;
     std::string body;
+	int _contentLength;
 };
 
 bool parseHttpRequest(const std::string &rawRequest, HttpRequest &request);//Pour appeller la fonction en dehors ?

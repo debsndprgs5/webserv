@@ -49,15 +49,15 @@ bool Client::fillRequest(char *buffer){
 //Commented for easy make, needs to modify httpParser to get the variable
 bool Client::isRequestFull(){
 
-//    struct HttpRequest Request;
-    // if(parseHttpRequest(_request, Request) == true){
-    //     if(Request.method == "POST"){
-    //         if(Request.contentLength == _request.size() || (Request.chunked == true && checkEnd() == true))
-    //             return true;
-    //     else 
-    //         return false;
-    //     }
-    // }
+   struct HttpRequest Request;
+    if(parseHttpRequest(_request, Request) == true){
+        if(Request.method == "POST"){
+            if(Request._contentLength == _request.size())
+                return true;
+        else 
+            return false;
+        }
+    }
      return true;
 }
 

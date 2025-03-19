@@ -2,14 +2,6 @@
         Rajouter la map alias dans server/methods
         Faire une function search replace 
 
-## Trunk
-        Trouver la variable Content Length ou chunked dans parsing http
-        Finir la function isFull()-> elle retourne true h24
-
-### Reponse 
-        Formatter la reponse en HTTP/1.1
-        Faire une boucle for pour envoyer la reponse,(on deecoupe string tout les 1024)
-
 ### CGI 
         Faire un execve , balancer le tout dans un fd tempo
         Formatter la reponse avec le content de fd tempo 

@@ -29,7 +29,11 @@ Methods::Methods(Client *client, HttpRequest parsedRequest){
 	_mappedCodes[500] = "Internal Server Error";
 	_mappedCodes[501] = "Not Implemented";
 	if(parseHttpRequest(_client->getRequest(), parsedRequest) == true){
-		Log("METHODS IS TRUE");
+		size_t lastSlash = _parsedRequest.uri.find_last_of('/');
+		if(lastSlash == _parsedRequest.uri.size()-1){
+			_parsedRequest.uri += "index.html";
+		}
+		Log("___REQUESTED URI :"+_parsedRequest.uri);
     	handleRequest();
 		doMethod();
 	}
@@ -37,7 +41,6 @@ Methods::Methods(Client *client, HttpRequest parsedRequest){
 }
 
 Methods::~Methods(){
-	Log("METHOD KIILED");
 }
 
 std::string &Methods::getResponse(){
@@ -274,6 +277,8 @@ std::string Methods::findWhat(){
 
 std::string Methods::findType(std::string uri){
 	size_t lastDot = uri.find_last_of('.');
+	if(_ret != 200 && _ret != 201)
+		return("text/html");
 	if(lastDot  == std::string::npos)
 		return("");//no extention
 	std::string extention = uri.substr(lastDot);
