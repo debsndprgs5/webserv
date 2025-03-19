@@ -36,7 +36,7 @@ void setLocationIndex(LocationConfig &loc, const std::vector<std::string>& parts
 
 void setLocationAlias(LocationConfig &loc, const std::vector<std::string>& parts) {
     if (parts.size() >= 3)
-        loc._alias[parts[1]] = parts[2];
+        loc._alias = parts[1];
 }
 
 void setLocationSendfile(LocationConfig &loc, const std::vector<std::string>& parts) {
