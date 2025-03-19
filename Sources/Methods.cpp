@@ -59,9 +59,12 @@ void Methods::handleRequest(){
 	std::string searchLocationPath;
 	LocationConfig *config;
     searchLocationPath = findLocationPath(_parsedRequest.uri);
+	Log("LOCATION PATH :"+searchLocationPath);
     config = findConfig(searchLocationPath, _client->_server->_locations);
-	if(config != NULL)
+	if(config != NULL){
 		setConfig(config);
+		Log("CONFIG FOUND");
+	}
 	else 	
 		setConfig();
 }
@@ -84,8 +87,7 @@ std::string Methods::findLocationPath(std::string uri){
 //Needs to add aliases
 void Methods::setConfig(){
 	_root = _client->_server->getRoot();
-	_methods = _client->_server->_methods;
-	_download_dir = _client->_server->getDownloadDir();
+	_methods = _client->_server->_methods;;
 	_php_cgi_path = _client->_server->getphpCgi();
 }
 
@@ -102,24 +104,32 @@ LocationConfig *Methods::findConfig(std::string path, std::vector<LocationConfig
         return NULL;
     }
     // Split the path into segments by '/'
-    std::vector<std::string> segments;
-    std::string delimiter = "/";
-    size_t start = 0;
-    size_t end = path.find(delimiter);
-    while (end != std::string::npos) {
-        segments.push_back(path.substr(start, end - start));
-        start = end + 1;
-        end = path.find(delimiter, start);
-    }
-    // Add the last segment (if any)
-    if (start < path.size()) {
-        segments.push_back(path.substr(start));
-    }
+	std::vector<std::string> segments;
+	std::string delimiter = "/";
+	size_t start = 0;
+	size_t end = path.find(delimiter);
 
+	// Add a leading "/" to the first segment
+	if (start == 0 && path[0] == '/') {
+		start = 1;  // Skip the first "/" since we are going to add it back manually
+	}
+
+	while (end != std::string::npos) {
+		// Add the "/" to the start of each segment
+		segments.push_back("/" + path.substr(start, end - start));
+		start = end + 1;  // Move past the delimiter
+		end = path.find(delimiter, start);  // Find the next delimiter
+	}
+	// Add the last segment (if any), with the leading "/"
+	if (start < path.size()) {
+		segments.push_back("/" + path.substr(start));
+	}
     // Begin correlation with LocationConfig objects
     std::string currentPath = "/";
     for (size_t i = 0; i < segments.size(); ++i) {
         for (size_t j = 0; j < locations.size(); ++j) {
+			Log("SEGEMENT :"+ segments[i]);
+			Log("LOCATION MATCH:" + locations[j]._location_match);
             if (locations[j]._location_match == segments[i]) {
                 if (i == segments.size() - 1) {
                     // Found a match and no more segments left
