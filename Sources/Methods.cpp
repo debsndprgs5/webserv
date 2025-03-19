@@ -92,7 +92,6 @@ void Methods::setConfig(){
 void Methods::setConfig(LocationConfig *config){
 	_root = config->_root;
 	_methods = config->_methods;
-	_download_dir = config->_download_dir;
 	_php_cgi_path = config->_php_cgi_path;
 }
 

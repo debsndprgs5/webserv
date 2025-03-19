@@ -13,6 +13,7 @@ void printLocation(const LocationConfig &loc, int indent = 0)
     std::cout << indentStr << "Root: " << loc._root << "\n";
     std::cout << indentStr << "Name: " << loc._name << "\n";
     std::cout << indentStr << "Auto Index: " << (loc._auto_index ? "true" : "false") << "\n";
+    std::cout << indentStr << "alias: " << loc._alias << "\n";
     if (!loc._methods.empty()) {
         std::cout << indentStr << "Allowed Methods: ";
         for (size_t i = 0; i < loc._methods.size(); ++i)
@@ -111,9 +112,6 @@ int main(int argc, char **argv)
         std::cout << "  Ip address: " << " | " << servers[i]._ipAdr<< std::endl;
         std::cout << "\n";
         std::cout << "  root: " << servers[i]._root << "\n";
-        std::cout << "alias : ";
-        for (std::map<std::string, std::string>::iterator it = servers[i]._alias.begin(); it != servers[i]._alias.end(); ++it)
-            std::cout << it->first << " " << it->second << "\n";
         std::cout << "  client_max_body_size: " << servers[i]._client_max_body_size << "\n";
         std::cout << "  Number of locations: " << servers[i]._location.size() << "\n";
         printAllLocations(servers[i]._location);
