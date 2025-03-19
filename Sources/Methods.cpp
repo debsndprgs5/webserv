@@ -14,7 +14,7 @@ Methods::Methods(Client *client, HttpRequest parsedRequest){
 	_allowedTypes[".php"] = "application/php";
     _allowedTypes[".js"] = "application/javascript";
     _allowedTypes[".html"] = "text/html";
-    _allowedTypes[".htm"] = "text/html";
+    _allowedTypes[".htlm"] = "text/html";
     _allowedTypes[".css"] = "text/css";
     _allowedTypes[".jpeg"] = "image/jpeg";
     _allowedTypes[".jpg"] = "image/jpeg";
@@ -37,7 +37,6 @@ Methods::Methods(Client *client, HttpRequest parsedRequest){
     	handleRequest();
 		doMethod();
 	}
-	
 }
 
 Methods::~Methods(){
@@ -190,7 +189,7 @@ void Methods::myPost(){
 		_ret = 201;
 		setResponse();
 		return;
-	} 
+	}
 	else {
 		fillError("500"); // Internal Server Error
 		return;

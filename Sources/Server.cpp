@@ -27,7 +27,6 @@ Server &Server::operator=(const Server &Conf){
 	_root = Conf._root;
 	_access_log = Conf._access_log;
 	_client_max_body_size = Conf._client_max_body_size;
-	_download_dir = Conf._download_dir;
 	_sendfile = Conf._sendfile;
 	_php_cgi_path = Conf._php_cgi_path;
 	_sockets = Conf._sockets;
@@ -46,7 +45,6 @@ void Server::setConfig(ServerConfig Conf){
 	_root = Conf._root;
 	_access_log = Conf._access_log;
 	_client_max_body_size = Conf._client_max_body_size;
-	_download_dir = Conf._download_dir;
 	_sendfile = Conf._sendfile;
 	_php_cgi_path = Conf._php_cgi_path;
 	memset(&_socketAddress, 0, sizeof(_socketAddress));
@@ -66,8 +64,6 @@ LocationConfig Server::setLocations(LocationConfig location){
 		Conf._root = _root;
 	if(Conf._methods.empty())
 		Conf._methods = _methods;
-	if(Conf._download_dir.empty())
-		Conf._download_dir = _download_dir;
 	if(Conf._php_cgi_path.empty())
 		Conf._php_cgi_path = _php_cgi_path;
 	if(!Conf._nested_locations.empty()){
@@ -148,9 +144,6 @@ std::string const &Server::getRoot()const{
 	return _root;
 }
 
-std::string const &Server::getDownloadDir()const{
-	return _download_dir;
-}
 
 std::string const &Server::getphpCgi()const{
 	return _php_cgi_path;
