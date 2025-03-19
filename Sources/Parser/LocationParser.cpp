@@ -44,11 +44,6 @@ void setLocationSendfile(LocationConfig &loc, const std::vector<std::string>& pa
         loc._sendfile = parseBool(parts[1]);
 }
 
-void setLocationDownloadDir(LocationConfig &loc, const std::vector<std::string>& parts) {
-    if (parts.size() >= 2)
-        loc._download_dir = parts[1];
-}
-
 void setLocationPhpCgiPath(LocationConfig &loc, const std::vector<std::string>& parts) {
     if (parts.size() >= 2)
         loc._php_cgi_path = parts[1];
@@ -108,7 +103,6 @@ LocationConfig parseLocation(std::ifstream &in, const std::string &firstLine)
     locationDirectives["allow_methods"] = setLocationAllowMethods;
     locationDirectives["index"] = setLocationIndex;
     locationDirectives["sendfile"] = setLocationSendfile;
-    locationDirectives["download_dir"] = setLocationDownloadDir;
     locationDirectives["php_cgi_path"] = setLocationPhpCgiPath;
     locationDirectives["alias"] = setLocationAlias;
     locationDirectives["client_body_buffer_size"] = setLocationClientBodyBufferSize;

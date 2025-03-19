@@ -27,11 +27,6 @@ void setServerErrorPage(ServerConfig &server, const std::vector<std::string>& pa
         server._error_page[parts[1]] = parts[2];
 }
 
-void setServerAlias(ServerConfig &server, const std::vector<std::string>& parts) {
-    if (parts.size() >= 3)
-        server._alias[parts[1]] = parts[2];
-}
-
 void setServerAllowMethods(ServerConfig &server, const std::vector<std::string>& parts) {
     for (size_t i = 1; i < parts.size(); ++i)
         server._methods.push_back(parts[i]);
@@ -52,10 +47,6 @@ void setServerClientMaxBodySize(ServerConfig &server, const std::vector<std::str
         server._client_max_body_size = std::atoi(parts[1].c_str());
 }
 
-void setServerDownloadDir(ServerConfig &server, const std::vector<std::string>& parts) {
-    if (parts.size() >= 2)
-        server._download_dir = parts[1];
-}
 
 void setServerSendfile(ServerConfig &server, const std::vector<std::string>& parts) {
     if (parts.size() >= 2)
@@ -81,12 +72,10 @@ ServerConfig parseServer(std::ifstream &in)
     serverDirectives["server_name"] = setServerName;
     serverDirectives["access_log"] = setServerAccessLog;
     serverDirectives["error_page"] = setServerErrorPage;
-    serverDirectives["alias"] = setServerAlias;
     serverDirectives["allow_methods"] = setServerAllowMethods;
     serverDirectives["index"] = setServerIndex;
     serverDirectives["root"] = setServerRoot;
     serverDirectives["client_max_body_size"] = setServerClientMaxBodySize;
-    serverDirectives["download_dir"] = setServerDownloadDir;
     serverDirectives["sendfile"] = setServerSendfile;
     serverDirectives["php_cgi_path"] = setServerPhpCgiPath;
 

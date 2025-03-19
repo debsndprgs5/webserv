@@ -310,3 +310,67 @@ Une fois ces bases comprises, tu pourras manipuler les sockets, le `poll()`
 en respectant la RFC. Bonne lecture et bon courage !
 
 
+---------------------------------------------------------------
+
+
+
+## client_max_body_size
+
+- **Définition :**  
+  Cette directive fixe la **taille maximale** que peut atteindre le corps d'une requête (comme dans un upload via POST). Si la taille du corps dépasse cette limite, NGINX renvoie une erreur (généralement une 413 Request Entity Too Large).
+
+- **Utilité :**  
+  - Limiter la taille des uploads pour éviter les abus ou les attaques de type déni de service.
+  - Protéger le serveur contre des requêtes excessivement volumineuses qui pourraient saturer les ressources.
+
+---
+
+## client_body_buffer_size
+
+- **Définition :**  
+  Cette directive détermine la **taille du tampon** utilisé pour stocker temporairement le corps de la requête en mémoire.  
+  Si la taille du corps est supérieure à ce tampon, NGINX passe alors à l’utilisation d’un fichier temporaire sur le disque.
+
+- **Utilité :**  
+  - Optimiser la gestion de la mémoire pour les requêtes de taille modérée.
+  - Réduire l’utilisation des E/S disque pour les petites requêtes, ce qui peut améliorer la performance.
+
+---
+
+## Différences principales
+
+- **Nature de la limite :**
+  - *client_max_body_size* fixe une limite **absolue** sur la taille de la requête.
+  - *client_body_buffer_size* ne limite pas la taille totale, mais indique combien de données doivent être lues en mémoire avant de passer à un stockage sur disque.
+
+- **Impact sur la performance :**
+  - Un tampon plus grand (client_body_buffer_size) permet de traiter des requêtes moyennement volumineuses entièrement en mémoire, ce qui est plus rapide.
+  - Par contre, client_max_body_size sert de garde-fou pour ne pas accepter des requêtes trop lourdes qui pourraient mettre en péril la stabilité du serveur.
+
+---
+
+## Pourquoi peut-on les spécifier dans différents contextes ?
+
+NGINX adopte une **configuration hiérarchique** qui permet d’appliquer des directives à différents niveaux :
+
+- **Au niveau http :**  
+  Tu définis des valeurs par défaut pour l’ensemble du serveur. Cela s’applique à tous les blocs server et location, sauf si tu les surcharges.
+
+- **Au niveau server :**  
+  Tu peux adapter ces valeurs pour un domaine ou un serveur virtuel spécifique, par exemple si l’un d’eux doit autoriser des uploads plus volumineux ou utiliser des tampons différents.
+
+- **Au niveau location :**  
+  Tu bénéficies d’un contrôle très fin sur certaines URL. Par exemple, pour une API de upload qui s’attend à recevoir de gros fichiers, tu pourras augmenter client_max_body_size et ajuster client_body_buffer_size indépendamment des autres routes.
+
+Cette granularité te permet de :
+- **Adapter la sécurité et la performance** en fonction du type de contenu attendu sur chaque endpoint.
+- **Optimiser les ressources** en ne surchargeant pas la mémoire pour des endpoints qui reçoivent principalement de petits volumes de données.
+
+---
+
+**En résumé :**  
+- **client_max_body_size** est un seuil de sécurité qui empêche des requêtes trop lourdes.  
+- **client_body_buffer_size** est un paramètre de performance qui détermine la taille de la mémoire tampon pour la lecture des corps de requête.  
+- Leur spécification à différents niveaux de la configuration (http, server, location) permet une personnalisation fine des comportements en fonction des besoins spécifiques de chaque partie de ton application.
+
+**Fiabilité : 100%** (Source : Documentation officielle de NGINX, adaptée selon l’usage courant)
