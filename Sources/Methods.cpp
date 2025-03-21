@@ -4,6 +4,7 @@
 //setup client and default errors, do the method aked by client
 //doMethod changes the variable ->response(the full message send back to internet)
 Methods::Methods(Client *client, HttpRequest parsedRequest){
+	Log("WHY POST DON'T come HERE BIATCH ??");
     _client = client;
     _parsedRequest = parsedRequest;
 	_defaultErrors["404"] = "defaultErrors/404.html";//NotFound
@@ -28,10 +29,15 @@ Methods::Methods(Client *client, HttpRequest parsedRequest){
 	_mappedCodes[413] = "Paylods exceeds max_body_size";
 	_mappedCodes[500] = "Internal Server Error";
 	_mappedCodes[501] = "Not Implemented";
-	if(parseHttpRequest(_client->getRequest(), parsedRequest) == true){
+	if(parseHttpRequest(_client->getRequest(), _parsedRequest) == true){
 		size_t lastSlash = _parsedRequest.uri.find_last_of('/');
 		if(lastSlash == _parsedRequest.uri.size()-1){
-			_parsedRequest.uri += "index.html";
+			if(_parsedRequest.method == "GET")
+				_parsedRequest.uri += "index.html";
+			else{
+				fillError("405");
+				return;
+			}
 		}
 		Log("___REQUESTED URI :"+_parsedRequest.uri);
     	handleRequest();
@@ -65,8 +71,10 @@ void Methods::handleRequest(){
 		setConfig(config);
 		Log("CONFIG FOUND");
 	}
-	else 	
+	else {
 		setConfig();
+		Log("NO CONFIG FOUND ");
+	}
 }
 
 
@@ -141,7 +149,6 @@ LocationConfig *Methods::findConfig(std::string path, std::vector<LocationConfig
             }
         }
     }
-    Log("FOR TEST THIS SHOUDLN'T APPEAR ?");
     // No matching location found
     return NULL;
 }
@@ -152,12 +159,10 @@ void Methods::doMethod(){
 			myPost();
 		else if(_parsedRequest.method == "GET"){
 			myGet();
-			Log("WE ARE IN MYGET ? ");
 		}
 		else if(_parsedRequest.method == "DELETE")
 			myDelete();
 		else{
-			Log("METHODS FUCKING WTH ME :" + _parsedRequest.method+"|");
 			fillError("501");//Not implemented
 		}
 	}
@@ -170,18 +175,25 @@ void Methods::myPost(){
 	std::string path = _root + _parsedRequest.uri.substr(0, lastSlash);
 	std::string safePost = _parsedRequest.uri.substr(lastSlash+1);
 	std::ifstream testPath(path.c_str()); // Test if path exists
+	Log("TESTPATH :");
+	std::cout << path << std::endl;
 	if (!testPath) {
+		Log("Can't open TESTPATH");
 		fillError("404"); //not found
 		return;
 	}
 	testPath.close();
 	size_t lastDot = safePost.find_last_of('.');
-	if (lastDot == std::string::npos) {
+	Log("SafePOST : " + safePost);
+	if (lastDot == std::string::npos){
+		Log("NO EXTENSION FOUND");
 		fillError("404"); // No extension found (Bad Request)
 		return;
 	}
-	std::string ext = safePost.substr(lastDot + 1); // Extract extension
-	if (_allowedTypes.find(ext) == _allowedTypes.end()) {
+	std::string ext = safePost.substr(lastDot); // Extract extension
+	Log("EXT : " + ext);
+	if (_allowedTypes.find(ext) == _allowedTypes.end()){
+		Log("BAD EXTENTION");
 		fillError("404"); // Invalid extension (Bad Request)
 		return;
 	}
@@ -189,11 +201,13 @@ void Methods::myPost(){
 	std::ifstream existingFile(fullFilePath.c_str());
 	if (existingFile.is_open()) {
 		existingFile.close();
+		Log("File already exist");
 		fillError("500"); //File already exists
 		return;
 	}
 	std::ofstream newFile(fullFilePath.c_str());
 	if (newFile) {
+		newFile << _parsedRequest.body;
 		newFile.close();
 		_ret = 201;
 		setResponse();

@@ -47,12 +47,12 @@ bool Client::fillRequest(char *buffer){
 //Check if the method is POST then if it's full, all other request shouldn't be chunked
 // true-> Server can respond to client / false -> waiting for full content 
 //Commented for easy make, needs to modify httpParser to get the variable
-bool Client::isRequestFull(){
+bool Client::isRequestFull(){//Needs to find other way to do this 
 
    struct HttpRequest Request;
     if(parseHttpRequest(_request, Request) == true){
         if(Request.method == "POST"){
-            if(Request._contentLength == _request.size())
+            if(Request._contentLength == Request.body.size())
                 return true;
         else 
             return false;
