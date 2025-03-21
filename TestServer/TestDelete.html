@@ -1,9 +1,9 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bienvenue sur Webserv</title>
+  <title>Test DELETE - Webserv</title>
   <style>
     /* Style global */
     body {
@@ -64,6 +64,29 @@
       font-size: 1.2em;
       line-height: 1.6;
     }
+    /* Formulaire de test DELETE */
+    form {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 20px;
+    }
+    form input, form button {
+      padding: 10px;
+      margin: 5px;
+      width: 80%;
+      max-width: 400px;
+      font-size: 1em;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      background: #f9f9f9;
+      width: 80%;
+      max-width: 400px;
+      white-space: pre-wrap;
+    }
     /* Footer */
     footer {
       text-align: center;
@@ -77,24 +100,43 @@
 <body>
   <header>
     <h1>Bienvenue sur Webserv</h1>
-    <p>On en a chié pour afficher ça</p>
+    <p>Page de test DELETE</p>
   </header>
   <nav>
     <a href="/">Accueil</a>
-    <a href="/TestPost/">À propos</a>
-    <a href="/">Contact</a>
+    <a href="/TestPost.html">Nourrir</a>
+    <a href="/TestDelete.html">Supprimer</a>
   </nav>
   <div class="container">
     <section class="intro">
-      <h2>PAGE 2!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WAOUUUU </h2>
-      <p>
-        Ce serveur a été développé pour repondre au sujet de Webserv. 
-        Il n'y as pas grand chose d'autre a voir MAIS c'est deja pas mal, hesitez pas a regarder nos pages d'erreur elles sont sympa.
-      </p>
+      <h2>Tester la requête DELETE</h2>
+      <p>Utilise ce formulaire pour envoyer une requête DELETE vers ton serveur.</p>
+      <form id="deleteForm">
+        <input type="text" id="url" name="url" placeholder="http://example.com/api/resource" required>
+        <button type="submit">Envoyer DELETE</button>
+      </form>
+      <div id="result"></div>
     </section>
   </div>
   <footer>
     &copy; 2025 Webserv. Aucuns droits réservés.
   </footer>
+  <script>
+    document.getElementById('deleteForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const url = document.getElementById('url').value;
+      
+      fetch(url, {
+        method: 'DELETE'
+      })
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('result').innerText = data;
+      })
+      .catch(error => {
+        document.getElementById('result').innerText = 'Erreur : ' + error;
+      });
+    });
+  </script>
 </body>
 </html>
