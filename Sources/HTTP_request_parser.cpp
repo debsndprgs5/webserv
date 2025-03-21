@@ -50,6 +50,8 @@ bool parseHttpRequest(const std::string &rawRequest, HttpRequest &request) {
     if (it != request.headers.end()) {
         int contentLength = std::atoi(it->second.c_str());
         if (contentLength > 0) {
+			std::cout << "CONTENT LENGTH FOUND ";
+			std::cout << contentLength << std::endl;
             // Read exactly contentLength bytes from the stream
             std::vector<char> buffer(contentLength);
             stream.read(&buffer[0], contentLength);

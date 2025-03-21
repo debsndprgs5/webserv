@@ -47,7 +47,7 @@ bool Process::isPendingDeco(struct pollfd &current, std::vector<struct pollfd> &
 void Process::handleData(struct pollfd &it, std::vector<struct pollfd> &pendingDeco){
 
 	char buffer[1024] = {0};
-	int bytesRecv = recv(it.fd, buffer, 1024, 0);
+	int bytesRecv = recv(it.fd, buffer, sizeof(buffer), 0);
 	if(bytesRecv < 0)
 		Log("Error or client disconnected while receiving data");
 	else if(bytesRecv == 0){
@@ -60,7 +60,8 @@ void Process::handleData(struct pollfd &it, std::vector<struct pollfd> &pendingD
 		std::cout << "Received from client : " << buffer <<std::endl;
 		for(std::map<int, Client*>::iterator itMap = _MappedClient.begin(); itMap != _MappedClient.end(); itMap++){
 			if(itMap->first == it.fd){ //client found in client_data_base
-				if(itMap->second->fillRequest(buffer) == true){ //request added to client and if full 
+				if(itMap->second->fillRequest(buffer) == true){
+					Log("***** START PROCESSING DATA"); //request added to client and if full 
 					proccessData(itMap->second, it.fd);
 				}
 			}

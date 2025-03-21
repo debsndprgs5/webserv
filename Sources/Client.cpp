@@ -37,6 +37,7 @@ std::string &Client::getRequest(){
 //stock buffer from process Return(0)->end not reach, Return(1)->end reach
 bool Client::fillRequest(char *buffer){
     _request += std::string(buffer);
+	Log("REQUEST FILLED UP");
     return (isRequestFull());
 }
 
@@ -48,13 +49,18 @@ bool Client::isRequestFull(){//Needs to find other way to do this
    struct HttpRequest Request;
     if(parseHttpRequest(_request, Request) == true){
         if(Request.method == "POST"){
+			Log("Content Length :");
+			std::cout << Request._contentLength << std::endl;
             if(Request._contentLength == Request.body.size())
-                return true;
+            {
+				Log("POST REQUEST IS CONCIDER FULL");  
+				return true;
+			}
         else 
             return false;
         }
     }
-     return true;
+    return true;
 }
 
 bool Client::checkEnd(){
@@ -66,10 +72,3 @@ bool Client::checkEnd(){
     }
     return false;
 }
-
-//1rst -> check Method
-//2cnd -> if post check if chuncked 
-
-
-//if Transfer_Enconding:chunked is found in header, the request is uncomplete
-//  Then the end of message will content "0\r\n\r\n"
