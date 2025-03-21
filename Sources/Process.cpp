@@ -60,9 +60,7 @@ void Process::handleData(struct pollfd &it, std::vector<struct pollfd> &pendingD
 		std::cout << "Received from client : " << buffer <<std::endl;
 		for(std::map<int, Client*>::iterator itMap = _MappedClient.begin(); itMap != _MappedClient.end(); itMap++){
 			if(itMap->first == it.fd){ //client found in client_data_base
-				Log("First check before Handle");
 				if(itMap->second->fillRequest(buffer) == true){ //request added to client and if full 
-					Log("Something is wrong here");
 					proccessData(itMap->second, it.fd);
 				}
 			}
@@ -73,9 +71,7 @@ void Process::handleData(struct pollfd &it, std::vector<struct pollfd> &pendingD
 void Process::proccessData(Client *client, int fd){
 	HttpRequest parsedRequest;
 	std::string response;
-	Log("POST IS HAVING TROUBLE IN PARSING ?????");
 	bool isGood = parseHttpRequest(client->getRequest(), parsedRequest);
-	Log("POST IS HAVING TROUBLE IN PARSING ?????");
 	Methods *met= new Methods(client, parsedRequest);
 	if(isGood == true)
 		response = met->getResponse();

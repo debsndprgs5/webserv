@@ -4,7 +4,6 @@
 //setup client and default errors, do the method aked by client
 //doMethod changes the variable ->response(the full message send back to internet)
 Methods::Methods(Client *client, HttpRequest parsedRequest){
-	Log("WHY POST DON'T come HERE BIATCH ??");
     _client = client;
     _parsedRequest = parsedRequest;
 	_defaultErrors["404"] = "defaultErrors/404.html";//NotFound

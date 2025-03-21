@@ -7,14 +7,10 @@ Client::Client(){
 Client::Client(int socket, Server *server){
     _server = server;
     _ClientSocket = socket;
-    Log("----------------Printing server TROUGHT CLIENT-------------");
-	Log("SERVER NAME " + _server->getName());
-	Log("IP ADRS : " + server->getIp());
 
 }
 
 Client::~Client(){
-    Log("²²²Closing client ....");
     close(_ClientSocket);
 }
 
