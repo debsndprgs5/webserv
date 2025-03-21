@@ -44,30 +44,36 @@ bool Process::isPendingDeco(struct pollfd &current, std::vector<struct pollfd> &
     return false;
 }
 
-void Process::handleData(struct pollfd &it, std::vector<struct pollfd> &pendingDeco){
-
+void Process::handleData(struct pollfd &it, std::vector<struct pollfd> &pendingDeco) 
+{
 	char buffer[1024] = {0};
-	int bytesRecv = recv(it.fd, buffer, 1024, 0);
-	if(bytesRecv < 0)
-		Log("Error or client disconnected while receiving data");
-	else if(bytesRecv == 0){
-		Log("client disconected");
-		struct pollfd tmp;
-		tmp.fd = it.fd;
-		pendingDeco.push_back(tmp);
-	}
-	else{
-		std::cout << "Received from client : " << buffer <<std::endl;
-		for(std::map<int, Client*>::iterator itMap = _MappedClient.begin(); itMap != _MappedClient.end(); itMap++){
-			if(itMap->first == it.fd){ //client found in client_data_base
-				Log("First check before Handle");
-				if(itMap->second->fillRequest(buffer) == true){ //request added to client and if full 
-					Log("Something is wrong here");
-					proccessData(itMap->second, it.fd);
-				}
-			}
-		}
-	}
+	int bytesRecv = recv(it.fd, buffer, sizeof(buffer), 0);
+    
+    if (bytesRecv < 0)
+        Log("Error or client disconnected while receiving data");
+    else if (bytesRecv == 0)
+    {
+        Log("Client disconnected");
+        struct pollfd tmp;
+        tmp.fd = it.fd;
+        pendingDeco.push_back(tmp);
+    }
+    else
+    {
+        // On récupère le client associé via _MappedClient
+        Client* client = _MappedClient[it.fd];
+        // On ajoute les données reçues au buffer du client
+        client->appendRawData(buffer, bytesRecv);
+        std::cout << "Received " << bytesRecv << " bytes from client " << it.fd << std::endl;
+
+        // Si la requête est complète (headers + body selon Content-Length), on la traite
+        if (client->requestIsComplete())
+        {
+            proccessData(client, it.fd);
+            // Une fois traitée, on vide le buffer pour la prochaine requête
+            client->clearRawData();
+        }
+    }
 }
 
 void Process::proccessData(Client *client, int fd){

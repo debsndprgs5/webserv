@@ -1,16 +1,17 @@
 #include "../Includes/Client.hpp"
+#include "../Includes/Server.hpp"
+#include "../Includes/ParsingDataStructs.hpp" // Pour parseHttpRequest, etc.
+#include <unistd.h>
+#include <cstdlib>
+#include <cstring>
 
-Client::Client(){
+Client::Client() : _ClientSocket(-1), _rawRequestBuffer("") {}
 
-}
-
-Client::Client(int socket, Server *server){
-    _server = server;
-    _ClientSocket = socket;
-    Log("----------------Printing server TROUGHT CLIENT-------------");
-	Log("SERVER NAME " + _server->getName());
-	Log("IP ADRS : " + server->getIp());
-
+Client::Client(int socket, Server *server)
+    : _ClientSocket(socket), _server(server), _rawRequestBuffer("") {
+    Log("----------------Printing server THROUGH CLIENT-------------");
+    Log("SERVER NAME " + _server->getName());
+    Log("IP ADRS : " + _server->getIp());
 }
 
 Client::~Client(){
@@ -19,61 +20,87 @@ Client::~Client(){
 }
 
 Client &Client::operator=(const Client &cpy){
-    _server = cpy._server;
-    _ClientSocket = cpy._ClientSocket;
-    _request = cpy._request;
+    if (this != &cpy) {
+        _server = cpy._server;
+        _ClientSocket = cpy._ClientSocket;
+        _rawRequestBuffer = cpy._rawRequestBuffer;
+    }
     return *this;
 }
 
+// Setter pour le socket et le serveur associé
 void Client::setSocketClient(int socket, Server *server){
-    _server = server;
     _ClientSocket = socket;
+    _server = server;
 }
 
+// Getter pour le socket client
 int Client::getSocketClient(){
     return _ClientSocket;
 }
 
+// Renvoie le buffer complet de la requête
 std::string &Client::getRequest(){
-    return _request;
+    return _rawRequestBuffer;
 }
 
-//stock buffer from process Return(0)->end not reach, Return(1)->end reach
-bool Client::fillRequest(char *buffer){
-    _request += std::string(buffer);
-    return (isRequestFull());
+// Ajoute les données reçues dans le buffer
+void Client::appendRawData(const char* data, size_t len){
+    _rawRequestBuffer.append(data, len);
 }
 
-//Check if the method is POST then if it's full, all other request shouldn't be chunked
-// true-> Server can respond to client / false -> waiting for full content 
-//Commented for easy make, needs to modify httpParser to get the variable
-bool Client::isRequestFull(){//Needs to find other way to do this 
+// Vide le buffer une fois la requête traitée
+void Client::clearRawData(){
+    _rawRequestBuffer.clear();
+}
 
-   struct HttpRequest Request;
-    if(parseHttpRequest(_request, Request) == true){
-        if(Request.method == "POST"){
-            if(Request._contentLength == Request.body.size())
-                return true;
-        else 
-            return false;
+// Vérifie si la requête est complète :
+// 1. Les headers doivent se terminer par "\r\n\r\n".
+// 2. Si un header "Content-Length:" est présent, on doit avoir reçu header + 4 + Content-Length octets.
+bool Client::requestIsComplete() const {
+    size_t headerEnd = _rawRequestBuffer.find("\r\n\r\n");
+    if (headerEnd == std::string::npos)
+        return false; // Les headers ne sont pas encore complets
+
+    // Extraire les headers
+    std::string headers = _rawRequestBuffer.substr(0, headerEnd);
+    size_t contentLength = 0;
+    size_t clPos = headers.find("Content-Length:");
+    if (clPos != std::string::npos) {
+        // Chercher le premier chiffre après "Content-Length:"
+        size_t start = headers.find_first_of("0123456789", clPos);
+        if (start != std::string::npos) {
+            contentLength = std::atoi(headers.c_str() + start);
         }
     }
-     return true;
+    // Si Content-Length est défini, le buffer complet doit avoir au moins headerEnd + 4 + contentLength octets
+    if (contentLength > 0)
+        return (_rawRequestBuffer.size() >= headerEnd + 4 + contentLength);
+
+    // Pour les requêtes sans body (ex. GET), la seule présence des headers suffit
+    return true;
 }
 
-bool Client::checkEnd(){
+/*
+// Méthode legacy : ajoute les données du buffer reçu (attention : pour du binaire, privilégiez l'appel à appendRawData avec la taille réelle)
+bool Client::fillRequest(char *buffer){
+    // On utilise strlen ici, ce qui convient pour des données texte mais pas pour du binaire.
+    // Il serait préférable de passer la longueur réelle reçue depuis recv().
+    appendRawData(buffer, std::strlen(buffer));
+    return requestIsComplete();
+}
 
+// Version legacy de isRequestFull()
+bool Client::isRequestFull(){
+    return requestIsComplete();
+}
+
+// Pour les requêtes chunked, vérifie si la séquence de fin "0\r\n\r\n" est présente
+bool Client::checkEnd(){
     const std::string endSequence = "0\r\n\r\n";
-    if (_request.size() >= endSequence.size() &&
-        _request.compare(_request.size() - endSequence.size(), endSequence.size(), endSequence) == 0) {
+    if (_rawRequestBuffer.size() >= endSequence.size() &&
+        _rawRequestBuffer.compare(_rawRequestBuffer.size() - endSequence.size(), endSequence.size(), endSequence) == 0)
         return true;
-    }
     return false;
 }
-
-//1rst -> check Method
-//2cnd -> if post check if chuncked 
-
-
-//if Transfer_Enconding:chunked is found in header, the request is uncomplete
-//  Then the end of message will content "0\r\n\r\n"
+*/

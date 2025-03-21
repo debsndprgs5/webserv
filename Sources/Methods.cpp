@@ -34,11 +34,11 @@ Methods::Methods(Client *client, HttpRequest parsedRequest){
 		if(lastSlash == _parsedRequest.uri.size()-1){
 			if(_parsedRequest.method == "GET")
 				_parsedRequest.uri += "index.html";
-			else
-			{
-				fillError("405");
-				return;
-			}
+			// else
+			// {
+			// 	fillError("405");
+			// 	return;
+			// }
 		}
 		Log("___REQUESTED URI :"+_parsedRequest.uri);
     	handleRequest();
@@ -278,13 +278,13 @@ void Methods::myPost() {
             }
 
             // Construire le chemin complet pour sauvegarder le fichier
-            std::string filePath =  _client->_server->getName() + "/" + fileName;
+            std::string filePath =  _root + "/" + fileName;
             std::ofstream outFile(filePath.c_str(), std::ios::binary);
             if (outFile.is_open()) {
                 outFile.write(fileContent.c_str(), fileContent.size());
                 outFile.close();
                 _ret = 201; // Créé
-                _response = "Fichier '" + fileName + "' téléchargé avec succès.";
+				setResponse();                
                 return;
             } else {
                 fillError("500"); // Erreur serveur interne
@@ -376,7 +376,7 @@ std::string Methods::findWhat(){
 
 std::string Methods::findType(std::string uri){
 	size_t lastDot = uri.find_last_of('.');
-	if(_ret != 200 && _ret != 201)
+	if(_ret != 200)
 		return("text/html");
 	if(lastDot  == std::string::npos)
 		return("");//no extention
