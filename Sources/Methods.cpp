@@ -34,7 +34,8 @@ Methods::Methods(Client *client, HttpRequest parsedRequest){
 		if(lastSlash == _parsedRequest.uri.size()-1){
 			if(_parsedRequest.method == "GET")
 				_parsedRequest.uri += "index.html";
-			else{
+			else
+			{
 				fillError("405");
 				return;
 			}
@@ -154,6 +155,7 @@ LocationConfig *Methods::findConfig(std::string path, std::vector<LocationConfig
 }
 
 void Methods::doMethod(){
+	std::cout << "\ntest printf : " << _parsedRequest.method << "\n";
 	if(isMethodAllowed(_methods, _parsedRequest.method) == true){
 		if(_parsedRequest.method == "POST")
 			myPost();
@@ -170,55 +172,130 @@ void Methods::doMethod(){
 		fillError("405");//Not allowed 
 }
 
-void Methods::myPost(){
-	size_t lastSlash = _parsedRequest.uri.find_last_of('/');
-	std::string path = _root + _parsedRequest.uri.substr(0, lastSlash);
-	std::string safePost = _parsedRequest.uri.substr(lastSlash+1);
-	std::ifstream testPath(path.c_str()); // Test if path exists
-	Log("TESTPATH :");
-	std::cout << path << std::endl;
-	if (!testPath) {
-		Log("Can't open TESTPATH");
-		fillError("404"); //not found
-		return;
-	}
-	testPath.close();
-	size_t lastDot = safePost.find_last_of('.');
-	Log("SafePOST : " + safePost);
-	if (lastDot == std::string::npos){
-		Log("NO EXTENSION FOUND");
-		fillError("404"); // No extension found (Bad Request)
-		return;
-	}
-	std::string ext = safePost.substr(lastDot); // Extract extension
-	Log("EXT : " + ext);
-	if (_allowedTypes.find(ext) == _allowedTypes.end()){
-		Log("BAD EXTENTION");
-		fillError("404"); // Invalid extension (Bad Request)
-		return;
-	}
-	std::string fullFilePath = path + "/" + safePost;
-	std::ifstream existingFile(fullFilePath.c_str());
-	if (existingFile.is_open()) {
-		existingFile.close();
-		Log("File already exist");
-		fillError("500"); //File already exists
-		return;
-	}
-	std::ofstream newFile(fullFilePath.c_str());
-	if (newFile) {
-		newFile << _parsedRequest.body;
-		newFile.close();
-		_ret = 201;
-		setResponse();
-		return;
-	}
-	else {
-		fillError("500"); // Internal Server Error
-		return;
-	}
+/* POST HANDLING TEST */
 
+std::string Rtrim(const std::string &s) {
+    size_t start = s.find_first_not_of(" \t\r\n");
+    if (start == std::string::npos)
+        return "";
+    size_t end = s.find_last_not_of(" \t\r\n");
+    return s.substr(start, end - start + 1);
 }
+
+// Extraction du boundary à partir du header Content-Type
+std::string extractBoundary(const std::string& contentType)
+{
+    std::string search = "boundary=";
+    size_t pos = contentType.find(search);
+    if (pos != std::string::npos) {
+        std::string boundary = contentType.substr(pos + search.length());
+        boundary = Rtrim(boundary);
+        // Supprimer d'éventuels guillemets
+        if (!boundary.empty() && boundary.front() == '"' && boundary.back() == '"') {
+            boundary = boundary.substr(1, boundary.size() - 2);
+        }
+        return boundary;
+    }
+    return "";
+}
+
+// Découpe le body en utilisant le boundary
+std::vector<std::string> splitBodyByBoundary(const std::string& body, const std::string& boundary)
+{
+    std::vector<std::string> parts;
+    std::string delim = "--" + boundary;
+    size_t start = 0;
+    size_t end = body.find(delim, start);
+    while (end != std::string::npos) {
+        std::string part = body.substr(start, end - start);
+        if (!part.empty())
+            parts.push_back(part);
+        start = end + delim.length();
+        end = body.find(delim, start);
+    }
+    return parts;
+}
+
+// Vérifie si une partie est celle contenant un fichier
+bool isFilePart(const std::string& part)
+{
+    return part.find("filename=") != std::string::npos;
+}
+
+// Extraction du nom de fichier à partir de la partie
+std::string extractFileName(const std::string& part)
+{
+    size_t pos = part.find("filename=\"");
+    if (pos == std::string::npos)
+        return "";
+    pos += 10; // longueur de 'filename="'
+    size_t endPos = part.find("\"", pos);
+    if (endPos == std::string::npos)
+        return "";
+    return part.substr(pos, endPos - pos);
+}
+
+// Extraction du contenu du fichier à partir de la partie
+std::string extractFileContent(const std::string& part)
+{
+    // Trouver la séquence "\r\n\r\n" qui sépare les headers du contenu
+    size_t pos = part.find("\r\n\r\n");
+    if (pos == std::string::npos)
+        return "";
+    pos += 4; // passer la séquence de séparation
+    // Optionnel : retirer le dernier CRLF qui précède le prochain boundary
+    size_t endPos = part.rfind("\r\n");
+    if (endPos == std::string::npos)
+        return part.substr(pos);
+    return part.substr(pos, endPos - pos);
+}
+
+
+void Methods::myPost() {
+    // Vérifier que le body n'est pas vide
+    if (_parsedRequest.body.empty()) {
+        fillError("400"); // Bad Request
+        return;
+    }
+
+    // Extraire le boundary depuis le header Content-Type
+    std::string contentType = _parsedRequest.headers["Content-Type"];
+    std::string boundary = extractBoundary(contentType);
+    if (boundary.empty()) {
+        fillError("400"); // Mauvaise requête
+        return;
+    }
+
+    // Découper le body en parties
+    std::vector<std::string> parts = splitBodyByBoundary(_parsedRequest.body, boundary);
+    for (size_t i = 0; i < parts.size(); ++i) {
+        if (isFilePart(parts[i])) {
+            std::string fileName = extractFileName(parts[i]);
+            std::string fileContent = extractFileContent(parts[i]);
+            if (fileName.empty() || fileContent.empty()) {
+                fillError("400"); // Mauvaise requête
+                return;
+            }
+
+            // Construire le chemin complet pour sauvegarder le fichier
+            std::string filePath =  _client->_server->getName() + "/" + fileName;
+            std::ofstream outFile(filePath.c_str(), std::ios::binary);
+            if (outFile.is_open()) {
+                outFile.write(fileContent.c_str(), fileContent.size());
+                outFile.close();
+                _ret = 201; // Créé
+                _response = "Fichier '" + fileName + "' téléchargé avec succès.";
+                return;
+            } else {
+                fillError("500"); // Erreur serveur interne
+                return;
+            }
+        }
+    }
+    // Si aucune partie fichier n'a été trouvée
+    fillError("400");
+}
+
 
 void Methods::myGet(){
 	std::string path;

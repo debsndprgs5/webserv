@@ -40,3 +40,10 @@ class Methods{
 	LocationConfig *findConfig(std::string path, std::vector<LocationConfig> &locations);
 
 };
+
+std::string extractBoundary(const std::string& contentType);
+std::vector<std::string> splitBodyByBoundary(const std::string& body, const std::string& boundary);
+bool isFilePart(const std::string& part);
+std::string extractFileName(const std::string& part);
+std::string extractFileContent(const std::string& part);
+

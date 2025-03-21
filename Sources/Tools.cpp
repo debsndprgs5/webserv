@@ -17,3 +17,4 @@ int ReturnWithMessage(int i, std::string str){
 void Log(std::string str){
 	std::cout << str << std::endl;
 }
+

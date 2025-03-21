@@ -1,8 +1,14 @@
 #pragma once
 #include <iostream>
-#include <sstream>
+#include <string>
+#include <cstring>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <cstdio>
+#include <vector>
 
 
 void ExitWithMessage(int i, std::string str);
