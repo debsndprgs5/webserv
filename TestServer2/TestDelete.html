@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Test DELETE - Webserv</title>
+  <style>
+    /* Style global */
+    body {
+      margin: 0;
+      font-family: 'Arial', sans-serif;
+      background: #f5f5f5;
+      color: #333;
+    }
+    /* Header avec dégradé */
+    header {
+      background: linear-gradient(135deg, #6a11cb, #2575fc);
+      color: #fff;
+      padding: 30px 20px;
+      text-align: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 2.8em;
+    }
+    header p {
+      margin: 10px 0 0;
+      font-size: 1.2em;
+    }
+    /* Barre de navigation */
+    nav {
+      background: #fff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      display: flex;
+      justify-content: center;
+    }
+    nav a {
+      text-decoration: none;
+      color: #333;
+      padding: 15px 25px;
+      font-size: 1em;
+      transition: background 0.3s;
+    }
+    nav a:hover {
+      background: #f0f0f0;
+    }
+    /* Contenu principal */
+    .container {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .intro {
+      text-align: center;
+    }
+    .intro h2 {
+      font-size: 2em;
+      margin-bottom: 15px;
+    }
+    .intro p {
+      font-size: 1.2em;
+      line-height: 1.6;
+    }
+    /* Formulaire de test DELETE */
+    form {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 20px;
+    }
+    form input, form button {
+      padding: 10px;
+      margin: 5px;
+      width: 80%;
+      max-width: 400px;
+      font-size: 1em;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      background: #f9f9f9;
+      width: 80%;
+      max-width: 400px;
+      white-space: pre-wrap;
+    }
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 20px;
+      background: #ddd;
+      color: #555;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Bienvenue sur Webserv</h1>
+    <p>Page de test DELETE</p>
+  </header>
+  <nav>
+    <a href="/">Accueil</a>
+    <a href="/TestPost.html">Nourrir</a>
+    <a href="/TestDelete.html">Supprimer</a>
+  </nav>
+  <div class="container">
+    <section class="intro">
+      <h2>Tester la requête DELETE</h2>
+      <p>Utilise ce formulaire pour envoyer une requête DELETE vers ton serveur.</p>
+      <form id="deleteForm">
+        <input type="text" id="url" name="url" placeholder="http://example.com/api/resource" required>
+        <button type="submit">Envoyer DELETE</button>
+      </form>
+      <div id="result"></div>
+    </section>
+  </div>
+  <footer>
+    &copy; 2025 Webserv. Aucuns droits réservés.
+  </footer>
+  <script>
+    document.getElementById('deleteForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const url = document.getElementById('url').value;
+      
+      fetch(url, {
+        method: 'DELETE'
+      })
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('result').innerText = data;
+      })
+      .catch(error => {
+        document.getElementById('result').innerText = 'Erreur : ' + error;
+      });
+    });
+  </script>
+</body>
+</html>
