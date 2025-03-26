@@ -25,6 +25,7 @@ class Methods{
     ~Methods();
     std::string parsedUri(int trigger);
     std::string &getResponse();
+	std::string findPath();
     void doMethod();
     bool isMethodAllowed(std::vector<std::string> Allowed, std::string method); //check if methods is allowed(Server and Location wide)
     void myGet();

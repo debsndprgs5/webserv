@@ -93,6 +93,7 @@ int Server::startServer(){
 	for(std::vector<int>::iterator it = _ports.begin(); it != _ports.end(); it ++){
 
 		int newSock = socket(AF_INET, SOCK_STREAM, 0);
+		int temp = 1;
 		_socketAddress.sin_port = htons(*it);
 		if (newSock < 0){
 			Log(_name+": Can't create newSocket");
@@ -104,7 +105,9 @@ int Server::startServer(){
 			std::cout << _ipAdrs << std::endl;
 			continue;
 		}
-	
+		if (setsockopt(newSock, SOL_SOCKET, SO_REUSEADDR, &temp, sizeof(int)) == -1) {
+   			Log(_name + ": Unable to use socket options, if connexion failed ports will be still in use");
+		}
 		if (bind(newSock, (struct sockaddr *)&_socketAddress, _socketLen) < 0){
 			close(newSock);
 			Log(_name+": Can't bind socket to address");

@@ -35,7 +35,7 @@ void setLocationIndex(LocationConfig &loc, const std::vector<std::string>& parts
 }
 
 void setLocationAlias(LocationConfig &loc, const std::vector<std::string>& parts) {
-    if (parts.size() >= 3)
+    if (parts.size() >= 2)
         loc._alias = parts[1];
 }
 

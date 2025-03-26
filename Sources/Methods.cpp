@@ -7,15 +7,13 @@ Methods::Methods(Client *client, HttpRequest parsedRequest){
     _client = client;
     _parsedRequest = parsedRequest;
 	_defaultErrors["404"] = "defaultErrors/404.html";//NotFound
-	_defaultErrors["405"] = "defaultErrors/405.html";//NotImplemented 
+	_defaultErrors["405"] = "defaultErrors/405.html";//NotAllowed
 	_defaultErrors["413"] = "defaultErrors/413.htlm";//Payload exceeds max_body_size.
     _defaultErrors["500"] = "defaultErrors/500.html";//Internal Server Error
     _defaultErrors["501"] = "defaultErrors/501.html";//Not Implemented
 	_allowedTypes[".php"] = "application/php";
-    _allowedTypes[".js"] = "application/javascript";
     _allowedTypes[".html"] = "text/html";
     _allowedTypes[".htlm"] = "text/html";
-    _allowedTypes[".css"] = "text/css";
     _allowedTypes[".jpeg"] = "image/jpeg";
     _allowedTypes[".jpg"] = "image/jpeg";
     _allowedTypes[".gif"] = "image/gif";
@@ -140,16 +138,21 @@ LocationConfig *Methods::findConfig(std::string path, std::vector<LocationConfig
 			Log("LOCATION MATCH:" + locations[j]._location_match);
             if (locations[j]._location_match == segments[i]) {
                 if (i == segments.size() - 1) {
-					if(!segments[i]._alias.empty())
-						_pathWithAlias += "/" + segments[i]._alias;
+					if(!locations[j]._alias.empty()){
+						_pathWithAlias += "/" + locations[j]._alias;
+						Log("UNEMPTY ALIAS FOUNDED");
+					}
 					else
-						_pathWithAlias += segments[i]._location_match;
+						_pathWithAlias += locations[j]._location_match;
                     return &locations[j];
                 } else if (!locations[j]._nested_locations.empty()) {
-                    if(!segments[i]._alias.empty())
-						_pathWithAlias += "/" + segments[i]._alias;
+                    if(!locations[j]._alias.empty()){
+						Log("UNEMPTY ALIAS NESTED");
+						_pathWithAlias += "/" + locations[j]._alias;
+					}
 					else
-						_pathWithAlias += segments[i]._location_match;
+						_pathWithAlias += locations[j]._location_match;
+					Log("IS ALIAS A REAL THING :"+locations[j]._alias);
                     return findConfig(path.substr(path.find(segments[i]) + segments[i].length() + 1), locations[j]._nested_locations);
                 }
             }
@@ -159,8 +162,32 @@ LocationConfig *Methods::findConfig(std::string path, std::vector<LocationConfig
     return NULL;
 }
 
+bool Methods::checkPhpCgi() {
+    std::string ext = ".php";
+    std::string uri = _parsedRequest.uri;
+    // Find the position of the query or fragment (if any)
+    size_t query_pos = uri.find_first_of("?#");
+    if (query_pos != std::string::npos) {
+        // Strip off everything from the first '?' or '#' onward
+        uri = uri.substr(0, query_pos);
+    }
+    // Convert the URI to lowercase for case-insensitive comparison (C++98 way)
+    for (size_t i = 0; i < uri.size(); ++i) {
+        uri[i] = std::tolower(uri[i]);
+    }
+    // Check if the URI ends with ".php"
+    if (uri.size() >= ext.size() && uri.compare(uri.size() - ext.size(), ext.size(), ext) == 0) {
+        return true;
+    }
+    return false;
+}
+
 void Methods::doMethod(){
 	std::cout << "\ntest printf : " << _parsedRequest.method << "\n";
+	if(checkPhpCgi() == true){
+		Log("Php extention founded");
+		//Send to Zac(0get 1post// char* filename/ _ret)
+	}
 	if(isMethodAllowed(_methods, _parsedRequest.method) == true){
 		if(_parsedRequest.method == "POST")
 			myPost();
@@ -229,7 +256,7 @@ bool isFilePart(const std::string& part)
 
 // Extraction du nom de fichier à partir de la partie
 std::string extractFileName(const std::string& part)
-{
+{    _allowedTypes[".css"] = "text/css";
     size_t pos = part.find("filename=\"");
     if (pos == std::string::npos)
         return "";
@@ -274,10 +301,7 @@ void Methods::myPost() {
     // Découper le body en parties
     std::vector<std::string> parts = splitBodyByBoundary(_parsedRequest.body, boundary);
     for (size_t i = 0; i < parts.size(); ++i) {
-        if (isFilePart(parts[i])) {
-            std::string fileName = extractFileName(parts[i]);
-            std::string fileContent = extractFileContent(parts[i]);
-            if (fileName.empty() || fileContent.empty()) {
+        if (isFilePart(parts[i])) {    _allowedTypes[".css"] = "text/css";
                 fillError("400"); // Mauvaise requête
                 return;
             }
@@ -304,7 +328,7 @@ void Methods::myPost() {
 
 void Methods::myGet(){
 	std::string path;
-	path = findPath;//Needs to do aliases
+	path = findPath();//Needs to do aliases
 	std::ifstream file(path.c_str()); // Open the file at the given path
 	if (file.is_open()) {
 		std::ostringstream contentStream;
@@ -378,10 +402,16 @@ std::string Methods::findPath(){
 		return (_root+ _parsedRequest.uri);
 	std::string path = _root;
 	size_t firstSlash = _pathWithAlias.find_first_of('/');
-	if(firstSlash = 0)
+	if(firstSlash == 0)
 		path += _pathWithAlias;
 	else 
 		path += "/" + _pathWithAlias;
+	size_t lastSlash = _parsedRequest.uri.find_last_of('/');
+	if(lastSlash != std::string::npos)
+		path += _parsedRequest.uri.substr(lastSlash);
+	Log("PATH WITH ALIAS :" + _pathWithAlias);
+	Log("ROOOT :" + _root);
+	Log("PPPPPAAATH TO SEARCH :" + path);
 	return (path);
 }
 
