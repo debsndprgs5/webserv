@@ -33,11 +33,11 @@ Methods::Methods(Client *client, HttpRequest parsedRequest){
 		if(lastSlash == _parsedRequest.uri.size()-1){
 			if(_parsedRequest.method == "GET")
 				_parsedRequest.uri += "index.html";
-			else
-			{
-				fillError("405");
-				return;
-			}
+			// else
+			// {
+			// 	fillError("405");
+			// 	return;
+			// }
 		}
 		Log("___REQUESTED URI :"+_parsedRequest.uri);
     	handleRequest();
@@ -140,10 +140,16 @@ LocationConfig *Methods::findConfig(std::string path, std::vector<LocationConfig
 			Log("LOCATION MATCH:" + locations[j]._location_match);
             if (locations[j]._location_match == segments[i]) {
                 if (i == segments.size() - 1) {
-                    // Found a match and no more segments left
+					if(!segments[i]._alias.empty())
+						_pathWithAlias += "/" + segments[i]._alias;
+					else
+						_pathWithAlias += segments[i]._location_match;
                     return &locations[j];
                 } else if (!locations[j]._nested_locations.empty()) {
-                    // Recurse into nested locations
+                    if(!segments[i]._alias.empty())
+						_pathWithAlias += "/" + segments[i]._alias;
+					else
+						_pathWithAlias += segments[i]._location_match;
                     return findConfig(path.substr(path.find(segments[i]) + segments[i].length() + 1), locations[j]._nested_locations);
                 }
             }
@@ -277,13 +283,13 @@ void Methods::myPost() {
             }
 
             // Construire le chemin complet pour sauvegarder le fichier
-            std::string filePath =  _client->_server->getName() + "/" + fileName;
+            std::string filePath =  _root + "/" + fileName;
             std::ofstream outFile(filePath.c_str(), std::ios::binary);
             if (outFile.is_open()) {
                 outFile.write(fileContent.c_str(), fileContent.size());
                 outFile.close();
                 _ret = 201; // Créé
-                _response = "Fichier '" + fileName + "' téléchargé avec succès.";
+				setResponse();                
                 return;
             } else {
                 fillError("500"); // Erreur serveur interne
@@ -298,7 +304,7 @@ void Methods::myPost() {
 
 void Methods::myGet(){
 	std::string path;
-	path = _root + _parsedRequest.uri;//Needs to do aliases
+	path = findPath;//Needs to do aliases
 	std::ifstream file(path.c_str()); // Open the file at the given path
 	if (file.is_open()) {
 		std::ostringstream contentStream;
@@ -316,7 +322,7 @@ void Methods::myGet(){
 void Methods::myDelete(){
 
 	std::string path;
-	path = _root + _parsedRequest.uri;//Needs to check for aliases 
+	path = findPath();//Needs to check for aliases 
 	std::ifstream file(path.c_str());
 	if (file.is_open()) {
 		file.close(); // Close the file since it exists
@@ -367,6 +373,19 @@ void Methods::fillError(std::string error_code){
     setResponse();
 }
 
+std::string Methods::findPath(){
+	if(_pathWithAlias.empty())
+		return (_root+ _parsedRequest.uri);
+	std::string path = _root;
+	size_t firstSlash = _pathWithAlias.find_first_of('/');
+	if(firstSlash = 0)
+		path += _pathWithAlias;
+	else 
+		path += "/" + _pathWithAlias;
+	return (path);
+}
+
+
 std::string Methods::findWhat(){
 	if(_mappedCodes.find(_ret) != _mappedCodes.end())
 		return (_mappedCodes[_ret]);
@@ -375,7 +394,7 @@ std::string Methods::findWhat(){
 
 std::string Methods::findType(std::string uri){
 	size_t lastDot = uri.find_last_of('.');
-	if(_ret != 200 && _ret != 201)
+	if(_ret != 200)
 		return("text/html");
 	if(lastDot  == std::string::npos)
 		return("");//no extention

@@ -9,6 +9,7 @@ class Methods{
     Client *_client;//also have his own reference to serv(Maybe I should put it in public ?)
     int _ret;
     HttpRequest _parsedRequest;
+	std::string _pathWithAlias;//Path Updated with aliases
     std::string _response;//The full message the server wiil send
     std::string _content;//The content use for a GET request(coud be void*?)
     std::map<int, std::string> _mappedCodes;//Map of errorsCodes and their definitions
