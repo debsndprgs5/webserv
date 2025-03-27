@@ -64,6 +64,7 @@ void Process::handleData(struct pollfd &it, std::vector<struct pollfd> &pendingD
         Client* client = _MappedClient[it.fd];
         // On ajoute les données reçues au buffer du client
         client->appendRawData(buffer, bytesRecv);
+        std::cout << buffer << std::endl;
         std::cout << "Received " << bytesRecv << " bytes from client " << it.fd << std::endl;
 
         // Si la requête est complète (headers + body selon Content-Length), on la traite

@@ -2,51 +2,16 @@
 
 // Using ternaries to prevent making 2 functions for almost the same result, supporting
 // either POST and GET for php
+// 0 = GET 1 = POST
 
-void cgi_php_handler(int *ret, char *scriptname, std::string *querystring, bool reqtype, char *path)
-{
-	char *arg[] = { "/usr/bin/php-cgi", NULL };
-	std::vector<std::string> vec;
-
-	std::ostringstream script_name, request_method, content_type, content_length, query_string;
-	
-	script_name << "SCRIPT_FILENAME=" << path << "/" << scriptname;
-	vec.insert() script_name.str();
-
-	char *method = (!reqtype) ? "GET" : "POST";
-
-	request_method << "REQUEST_METHOD=" << method;
-	vec.insert() request_method.str();
-
-	content_type << (!reqtype) ? NULL : "CONTENT_TYPE=application/x-www-form-urlencoded";
-	vec.insert() content_type.str();
-
-	content_length << "CONTENT_LENGTH=" << (!reqtype) ? 0 : querystring.size();
-	vec.insert() content_length.str();
-
-	query_string << (!reqtype) ? NULL : querystring;
-	vec.insert() query_string.str();
-
-	char **envp = new char*[vec.size() + 1];
-
-	for (size_t i = 0; i < vec.size(); ++i)
-	{
-		envp[i] = new char[vec[i].size() + 1];
-		std::strcpy(envp[i], vec[i].c_str());
-	}
-	envp(vec.size()) = nullptr;
-
-	int fdtemp;
-	if (!pipexec(arg, envp, ret, open(fdtemp)))
-		std::cout << "!!!!!!!!!!! SOMETHING WENT WRONG WITH PIPEX !!!!!!!!!!!" < std::endl;
-
-	for (size_t i = 0; i < vec.size(); ++i)
-	{
-		delete[] envp[i];
-	}
-	delete[] envp;
-}
-
+#include <iostream>
+#include <sstream>
+#include <vector>
+#include <string>
+#include <cstring>
+#include <cstdlib>
+#include <unistd.h>
+#include <sys/wait.h>
 
 int pipexec(char **arg, char **envp, int *ret, int fdtemp) 
 {
@@ -55,27 +20,34 @@ int pipexec(char **arg, char **envp, int *ret, int fdtemp)
 	if (pid < 0) 
 	{
 		*ret = -1;
-		return (0);
+		return 0;
 	}
 	else if (pid == 0)
 	{
 		// Child Process
-		// Redirect stdOUT to fdtemp
 		if (dup2(fdtemp, STDOUT_FILENO) < 0)
 		{
-			*ret = -1;
-			exit(-1);
+			perror("dup2 STDOUT");
+			exit(EXIT_FAILURE);
 		}
-		// close(fdtemp);
+		if (dup2(fdtemp, STDERR_FILENO) < 0)
+		{
+			perror("dup2 STDERR");
+			exit(EXIT_FAILURE);
+		}
 		execve(arg[0], arg, envp);
-		exit(-1);
+		perror("execve");
+		exit(EXIT_FAILURE);
 	}
 	else
 	{
 		// Parent Process
 		int status;
 		if (waitpid(pid, &status, 0) < 0)
+		{
 			*ret = -1;
+			return 0;
+		}
 		else
 		{
 			if (WIFEXITED(status))
@@ -83,5 +55,80 @@ int pipexec(char **arg, char **envp, int *ret, int fdtemp)
 			else
 				*ret = -1;
 		}
+		return 1;
 	}
+}
+
+void cgi_php_handler(int *ret, char *scriptname, std::string *querystring, bool reqtype, char *path, int fdtemp)
+{
+	char *arg[] = { "/usr/bin/php-cgi", NULL };
+	std::vector<std::string> vec;
+	std::ostringstream script_name, request_method, content_type, content_length, query_string;
+	
+	script_name << "SCRIPT_FILENAME=" << path << "/" << scriptname;
+	vec.push_back(script_name.str());
+
+	// 0 = GET, 1 = POST
+	char *method = (!reqtype) ? "GET" : "POST";
+	request_method << "REQUEST_METHOD=" << method;
+	vec.push_back(request_method.str());
+
+	if (reqtype)
+	{
+		content_type << "CONTENT_TYPE=application/x-www-form-urlencoded";
+		vec.push_back(content_type.str());
+	}
+
+	content_length << "CONTENT_LENGTH=" << (reqtype ? querystring->size() : 0);
+	vec.push_back(content_length.str());
+
+	query_string << "QUERY_STRING=" << *querystring;
+	vec.push_back(query_string.str());
+
+	char **envp_arr = new char*[vec.size() + 1];
+	for (size_t i = 0; i < vec.size(); ++i)
+	{
+		envp_arr[i] = new char[vec[i].size() + 1];
+		std::strcpy(envp_arr[i], vec[i].c_str());
+	}
+	envp_arr[vec.size()] = NULL;
+
+	if (!pipexec(arg, envp_arr, ret, fdtemp))
+		std::cout << "!!!!!!!!!!! SOMETHING WENT WRONG WITH PIPEX !!!!!!!!!!!" << std::endl;
+
+	for (size_t i = 0; i < vec.size(); ++i)
+	{
+		delete[] envp_arr[i];
+	}
+	delete[] envp_arr;
+}
+
+// Use a pipe to start the CGI and get output as a string
+std::string runCgiAndGetOutput(char *scriptname, std::string &queryString, bool reqType, char *path, int *ret)
+{
+	// Create a pipe : pipefd[0] read, pipefd[1] write
+	int pipefd[2];
+	if (pipe(pipefd) < 0)
+	{
+		perror("pipe");
+		return "";
+	}
+
+	//Call CGI function with write pipe
+	cgi_php_handler(ret, scriptname, &queryString, reqType, path, pipefd[1]);
+	
+	close(pipefd[1]);
+
+	//Read from the pipe
+	std::string output;
+	char buffer[1024];
+	ssize_t bytesRead;
+	while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer) - 1)) > 0)
+	{
+		buffer[bytesRead] = '\0';
+		output.append(buffer);
+	}
+	close(pipefd[0]);
+	
+	return output;
 }
