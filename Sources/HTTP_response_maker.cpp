@@ -32,17 +32,3 @@ std::string buildHttpResponse(const std::string& body, int statusCode, const std
 
     return response.str();
 }
-
-// EXEMPLE POUR YONAH
-
-void entrypoint_http_response(void)
-{
-    std::string body = "<html><body><h1>Hello World!</h1></body></html>";
-    std::string server_name = "WebServ/1.0";
-
-    // Construction d'une réponse 200 OK
-    std::string response = buildHttpResponse(body, 200, "OK", server_name, "text/html");
-
-    // Affichage de la réponse (en pratique tu l'envoie via un socket je crois)
-    std::cout << response;
-}

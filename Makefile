@@ -10,6 +10,7 @@ SRC = Sources/HTTP_request_parser.cpp \
 	Sources/Parser/ServerParser.cpp \
 	Sources/Parser/HttpParser.cpp \
 	Sources/Methods.cpp \
+	Sources/cgi_php_handler.cpp \
 
 
 
