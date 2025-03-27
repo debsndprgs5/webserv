@@ -12,6 +12,7 @@ Methods::Methods(Client *client, HttpRequest parsedRequest){
     _defaultErrors["500"] = "defaultErrors/500.html";//Internal Server Error
     _defaultErrors["501"] = "defaultErrors/501.html";//Not Implemented
 	_allowedTypes[".php"] = "application/php";
+	 _allowedTypes[".css"] = "text/css";
     _allowedTypes[".html"] = "text/html";
     _allowedTypes[".htlm"] = "text/html";
     _allowedTypes[".jpeg"] = "image/jpeg";
@@ -27,6 +28,10 @@ Methods::Methods(Client *client, HttpRequest parsedRequest){
 	_mappedCodes[500] = "Internal Server Error";
 	_mappedCodes[501] = "Not Implemented";
 	if(parseHttpRequest(_client->getRequest(), _parsedRequest) == true){
+		if(checkPhpCgi() == true){
+			Log("Php extention founded");
+			cgiHandler();
+		}
 		size_t lastSlash = _parsedRequest.uri.find_last_of('/');
 		if(lastSlash == _parsedRequest.uri.size()-1){
 			if(_parsedRequest.method == "GET")
@@ -90,7 +95,7 @@ std::string Methods::findLocationPath(std::string uri){
 }
 
 
-//Needs to add aliases
+
 void Methods::setConfig(){
 	_root = _client->_server->getRoot();
 	_methods = _client->_server->_methods;;
@@ -171,7 +176,7 @@ bool Methods::checkPhpCgi() {
         // Strip off everything from the first '?' or '#' onward
         uri = uri.substr(0, query_pos);
     }
-    // Convert the URI to lowercase for case-insensitive comparison (C++98 way)
+    // Convert the URI to lowercase for case-insensitive comparison
     for (size_t i = 0; i < uri.size(); ++i) {
         uri[i] = std::tolower(uri[i]);
     }
@@ -182,12 +187,96 @@ bool Methods::checkPhpCgi() {
     return false;
 }
 
+void Methods::setCgiName(){
+	int trigger = _parsedRequest.uri.find_first_of('?');
+	std::string cleanUri = _parsedRequest.uri;
+	if(trigger != std::string::npos)
+		cleanUri = parsedRequest.uri.substr(0, trigger -1);
+	int lastSlash = cleanUri.find_last_of('/');
+	if(lastSlash != std::string::npos){
+		_cgiName = cleanUri.substr(lastSlash);
+	}
+	else
+		_cgiName = cleanUri;
+}
+
+bool Methods::setCgiPath(){
+	int trigger = _parsedRequest.uri.find_first_of('?');
+	std::string cleanUri = _parsedRequest.uri;
+	if(trigger != std::string::npos)
+		cleanUri = parsedRequest.uri.substr(0, trigger -1);
+	std::string searchLocationPath = findLocationPath(cleanUri);
+	LocationConfig *config = findConfig(searchLocationPath);
+	if(config != NULL){
+		setConfig(config);
+	}
+	else 
+		setConfig();
+	_cgiPath = _root;
+	if(!_pathWithAlias.empty){
+		_cgiPath += _pathWithAlias;
+	}
+	std::string fullPath = _cgiPath + _cgiName;
+	std::ifstream file(fullPath.c_str());
+	if(file.is_open()){
+		file.close();
+		return true;
+	}
+	else 
+		return false;
+
+}
+
+void Methods::setCgiArg(){
+	
+	size_t trigger = _parsedRequest.uri.find_first_of('?');
+	if(trigger != std::string::npos){
+		_cgiArg = _parsedRequest.uri.substr(trigger+1);
+	}
+}
+
+void Methods::myGet(){
+	std::string path;
+	path = findPath();//Needs to do aliases
+	std::ifstream file(path.c_str()); // Open the file at the given path
+	if (file.is_open()) {
+		std::ostringstream contentStream;
+		contentStream << file.rdbuf(); // Stream the entire file content into the string
+		file.close();
+		_content = contentStream.str(); // Get the string content of the file
+		_ret = 200; // OK
+		setResponse();
+		return;
+	}
+	else
+		fillError("404"); // Not Found
+}
+
+
+void Methods::cgiHandler(){
+	setCgiName();
+	if(setCgiPath() == true){
+		setCgiArg();
+	}
+	else{
+		fillError("404");
+		return;
+	}
+	if(isMethodAllowed(_methods, _parsedRequest.method) == true){
+		if(_parsedRequest.methods == "GET"){
+			cgi_php_handler(_ret, _cgiName.c_str(), _cgiArg, 0, _cgiPath.c_str());
+		}
+		if(_parsedRequest.methods == "POST"){			
+			cgi_php_handler(_ret, _cgiName.c_str(), _parsedRequest.body, 0, _cgiPath.c_str());
+		}
+	}
+	else
+		fillError("405");
+}
+
 void Methods::doMethod(){
 	std::cout << "\ntest printf : " << _parsedRequest.method << "\n";
-	if(checkPhpCgi() == true){
-		Log("Php extention founded");
-		//Send to Zac(0get 1post// char* filename/ _ret)
-	}
+
 	if(isMethodAllowed(_methods, _parsedRequest.method) == true){
 		if(_parsedRequest.method == "POST")
 			myPost();
@@ -306,20 +395,19 @@ void Methods::myPost() {
                 return;
             }
 
-            // Construire le chemin complet pour sauvegarder le fichier
-            std::string filePath =  _root + "/" + fileName;
-            std::ofstream outFile(filePath.c_str(), std::ios::binary);
-            if (outFile.is_open()) {
-                outFile.write(fileContent.c_str(), fileContent.size());
-                outFile.close();
-                _ret = 201; // Créé
-				setResponse();                
-                return;
-            } else {
-                fillError("500"); // Erreur serveur interne
-                return;
-            }
-        }
+		// Construire le chemin complet pour sauvegarder le fichier
+		std::string filePath =  _root + "/" + fileName;
+		std::ofstream outFile(filePath.c_str(), std::ios::binary);
+		if (outFile.is_open()) {
+			outFile.write(fileContent.c_str(), fileContent.size());
+			outFile.close();
+			_ret = 201; // Créé
+			setResponse();                
+			return;
+		} else {
+			fillError("500"); // Erreur serveur interne
+			return;
+		}
     }
     // Si aucune partie fichier n'a été trouvée
     fillError("400");

@@ -12,13 +12,15 @@ class Methods{
 	std::string _pathWithAlias;//Path Updated with aliases
     std::string _response;//The full message the server wiil send
     std::string _content;//The content use for a GET request(coud be void*?)
+	std::string _cgiName;
+	std::string _cgiPath;
+	std::string _cgiArg;
     std::map<int, std::string> _mappedCodes;//Map of errorsCodes and their definitions
     std::map<std::string, std::string> _defaultErrors;//error_code and path to the page
 	std::map<std::string, std::string> _allowedTypes;
 	std::string _root;
 	std::vector<std::string> _methods;
 	std::string _php_cgi_path;
-	std::string _download_dir;
 
     public:
     Methods(Client *client, HttpRequest parsedRequest);
@@ -27,6 +29,7 @@ class Methods{
     std::string &getResponse();
 	std::string findPath();
     void doMethod();
+	bool checkPhpCgi();//returns true in founded cgi in uri
     bool isMethodAllowed(std::vector<std::string> Allowed, std::string method); //check if methods is allowed(Server and Location wide)
     void myGet();
     void myPost();
@@ -34,6 +37,9 @@ class Methods{
     void  fillError(std::string errorCode);
 	void handleRequest();
     void setResponse();
+	bool setCgiPath();
+	bool setCgiName();
+	bool setCgiArg();
 	void setConfig();
 	void setConfig(LocationConfig *config);
 	std::string findLocationPath(std::string uri);
