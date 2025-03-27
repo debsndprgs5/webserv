@@ -38,8 +38,11 @@ class Methods{
 	void handleRequest();
     void setResponse();
 	bool setCgiPath();
-	bool setCgiName();
-	bool setCgiArg();
+	void setCgiName();
+	void setCgiArg();
+	void cgiHandler();
+	std::string extractFileName(const std::string& part);
+	std::string runCgiAndGetOutput(const char *scriptname, std::string &queryString, bool reqType, const char *path, int *ret);
 	void setConfig();
 	void setConfig(LocationConfig *config);
 	std::string findLocationPath(std::string uri);

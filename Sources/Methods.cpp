@@ -36,11 +36,6 @@ Methods::Methods(Client *client, HttpRequest parsedRequest){
 		if(lastSlash == _parsedRequest.uri.size()-1){
 			if(_parsedRequest.method == "GET")
 				_parsedRequest.uri += "index.html";
-			// else
-			// {
-			// 	fillError("405");
-			// 	return;
-			// }
 		}
 		Log("___REQUESTED URI :"+_parsedRequest.uri);
     	handleRequest();
@@ -191,7 +186,7 @@ void Methods::setCgiName(){
 	int trigger = _parsedRequest.uri.find_first_of('?');
 	std::string cleanUri = _parsedRequest.uri;
 	if(trigger != std::string::npos)
-		cleanUri = parsedRequest.uri.substr(0, trigger -1);
+		cleanUri = _parsedRequest.uri.substr(0, trigger -1);
 	int lastSlash = cleanUri.find_last_of('/');
 	if(lastSlash != std::string::npos){
 		_cgiName = cleanUri.substr(lastSlash);
@@ -204,16 +199,16 @@ bool Methods::setCgiPath(){
 	int trigger = _parsedRequest.uri.find_first_of('?');
 	std::string cleanUri = _parsedRequest.uri;
 	if(trigger != std::string::npos)
-		cleanUri = parsedRequest.uri.substr(0, trigger -1);
+		cleanUri = _parsedRequest.uri.substr(0, trigger -1);
 	std::string searchLocationPath = findLocationPath(cleanUri);
-	LocationConfig *config = findConfig(searchLocationPath);
+	LocationConfig *config = findConfig(searchLocationPath,  _client->_server->_locations);
 	if(config != NULL){
 		setConfig(config);
 	}
 	else 
 		setConfig();
 	_cgiPath = _root;
-	if(!_pathWithAlias.empty){
+	if(!_pathWithAlias.empty()){
 		_cgiPath += _pathWithAlias;
 	}
 	std::string fullPath = _cgiPath + _cgiName;
@@ -235,23 +230,6 @@ void Methods::setCgiArg(){
 	}
 }
 
-void Methods::myGet(){
-	std::string path;
-	path = findPath();//Needs to do aliases
-	std::ifstream file(path.c_str()); // Open the file at the given path
-	if (file.is_open()) {
-		std::ostringstream contentStream;
-		contentStream << file.rdbuf(); // Stream the entire file content into the string
-		file.close();
-		_content = contentStream.str(); // Get the string content of the file
-		_ret = 200; // OK
-		setResponse();
-		return;
-	}
-	else
-		fillError("404"); // Not Found
-}
-
 
 void Methods::cgiHandler(){
 	setCgiName();
@@ -263,12 +241,13 @@ void Methods::cgiHandler(){
 		return;
 	}
 	if(isMethodAllowed(_methods, _parsedRequest.method) == true){
-		if(_parsedRequest.methods == "GET"){
-			cgi_php_handler(_ret, _cgiName.c_str(), _cgiArg, 0, _cgiPath.c_str());
+		if(_parsedRequest.method == "GET"){
+			_content = runCgiAndGetOutput( _cgiName.c_str(), _cgiArg, 0, _cgiPath.c_str(), &_ret);
 		}
-		if(_parsedRequest.methods == "POST"){			
-			cgi_php_handler(_ret, _cgiName.c_str(), _parsedRequest.body, 0, _cgiPath.c_str());
+		if(_parsedRequest.method == "POST"){			
+			_content = runCgiAndGetOutput(_cgiName.c_str(), _parsedRequest.body, 0, _cgiPath.c_str(), &_ret);
 		}
+		setResponse();
 	}
 	else
 		fillError("405");
@@ -344,7 +323,7 @@ bool isFilePart(const std::string& part)
 }
 
 // Extraction du nom de fichier à partir de la partie
-std::string extractFileName(const std::string& part)
+std::string Methods::extractFileName(const std::string& part)
 {    _allowedTypes[".css"] = "text/css";
     size_t pos = part.find("filename=\"");
     if (pos == std::string::npos)
@@ -394,7 +373,6 @@ void Methods::myPost() {
                 fillError("400"); // Mauvaise requête
                 return;
             }
-
 		// Construire le chemin complet pour sauvegarder le fichier
 		std::string filePath =  _root + "/" + fileName;
 		std::ofstream outFile(filePath.c_str(), std::ios::binary);
