@@ -232,7 +232,9 @@ void Methods::setCgiArg(){
 
 
 void Methods::cgiHandler(){
+Log("CGI HABLDER");
 	setCgiName();
+Log("CGI PATH");
 	if(setCgiPath() == true){
 		setCgiArg();
 	}
@@ -350,7 +352,6 @@ std::string extractFileContent(const std::string& part)
     return part.substr(pos, endPos - pos);
 }
 
-
 void Methods::myPost() {
     // Vérifier que le body n'est pas vide
     if (_parsedRequest.body.empty()) {
@@ -369,23 +370,28 @@ void Methods::myPost() {
     // Découper le body en parties
     std::vector<std::string> parts = splitBodyByBoundary(_parsedRequest.body, boundary);
     for (size_t i = 0; i < parts.size(); ++i) {
-        if (isFilePart(parts[i])) {    _allowedTypes[".css"] = "text/css";
+        if (isFilePart(parts[i])) {
+            std::string fileName = extractFileName(parts[i]);
+            std::string fileContent = extractFileContent(parts[i]);
+            if (fileName.empty() || fileContent.empty()) {
                 fillError("400"); // Mauvaise requête
                 return;
             }
-		// Construire le chemin complet pour sauvegarder le fichier
-		std::string filePath =  _root + "/" + fileName;
-		std::ofstream outFile(filePath.c_str(), std::ios::binary);
-		if (outFile.is_open()) {
-			outFile.write(fileContent.c_str(), fileContent.size());
-			outFile.close();
-			_ret = 201; // Créé
-			setResponse();                
-			return;
-		} else {
-			fillError("500"); // Erreur serveur interne
-			return;
-		}
+
+            // Construire le chemin complet pour sauvegarder le fichier
+            std::string filePath =  _client->_server->getName() + "/" + fileName;
+            std::ofstream outFile(filePath.c_str(), std::ios::binary);
+            if (outFile.is_open()) {
+                outFile.write(fileContent.c_str(), fileContent.size());
+                outFile.close();
+                _ret = 201; // Créé
+                _response = "Fichier '" + fileName + "' téléchargé avec succès.";
+                return;
+            } else {
+                fillError("500"); // Erreur serveur interne
+                return;
+            }
+        }
     }
     // Si aucune partie fichier n'a été trouvée
     fillError("400");

@@ -12,7 +12,7 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <sys/wait.h>
-#include <../Includes/Methods.hpp>
+#include "../Includes/Methods.hpp"
 
 int pipexec(char **arg, char **envp, int *ret, int fdtemp) 
 {
@@ -62,7 +62,7 @@ int pipexec(char **arg, char **envp, int *ret, int fdtemp)
 
 void cgi_php_handler(int *ret, const char *scriptname, std::string *querystring, bool reqtype, const char *path, int fdtemp)
 {
-	char *arg[] = { "/usr/bin/php-cgi", NULL };
+	const char *arg[] = { "/usr/bin/php-cgi", NULL };
 	std::vector<std::string> vec;
 	std::ostringstream script_name, request_method, content_type, content_length, query_string;
 	
@@ -70,7 +70,7 @@ void cgi_php_handler(int *ret, const char *scriptname, std::string *querystring,
 	vec.push_back(script_name.str());
 
 	// 0 = GET, 1 = POST
-	char *method = (!reqtype) ? "GET" : "POST";
+	const char *method = (!reqtype) ? "GET" : "POST";
 	request_method << "REQUEST_METHOD=" << method;
 	vec.push_back(request_method.str());
 
@@ -94,7 +94,7 @@ void cgi_php_handler(int *ret, const char *scriptname, std::string *querystring,
 	}
 	envp_arr[vec.size()] = NULL;
 
-	if (!pipexec(arg, envp_arr, ret, fdtemp))
+	if (!pipexec((char **)arg, envp_arr, ret, fdtemp))
 		std::cout << "!!!!!!!!!!! SOMETHING WENT WRONG WITH PIPEX !!!!!!!!!!!" << std::endl;
 
 	for (size_t i = 0; i < vec.size(); ++i)
