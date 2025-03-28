@@ -64,7 +64,7 @@ void cgi_php_handler(int *ret, const char *scriptname, std::string *querystring,
 {
 	const char *arg[] = { "/usr/bin/php-cgi", NULL };
 	std::vector<std::string> vec;
-	std::ostringstream script_name, request_method, content_type, content_length, query_string;
+	std::ostringstream script_name, request_method, content_type, content_length, redirect_status, query_string;
 	
 	script_name << "SCRIPT_FILENAME=" << path << "/" << scriptname;
 	vec.push_back(script_name.str());
@@ -82,6 +82,9 @@ void cgi_php_handler(int *ret, const char *scriptname, std::string *querystring,
 
 	content_length << "CONTENT_LENGTH=" << (reqtype ? querystring->size() : 0);
 	vec.push_back(content_length.str());
+
+	redirect_status << "REDIRECT_STATUS=200";
+	vec.push_back(redirect_status.str());
 
 	query_string << "QUERY_STRING=" << *querystring;
 	vec.push_back(query_string.str());

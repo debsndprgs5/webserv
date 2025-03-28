@@ -382,7 +382,9 @@ void Methods::myPost() {
                 _ret = 201; // Créé
 				setResponse();
                 return;
-            } else {
+            }
+            else
+            {
                 fillError("500"); // Erreur serveur interne
                 return;
             }
