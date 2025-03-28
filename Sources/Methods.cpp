@@ -230,7 +230,7 @@ void Methods::setCgiArg(){
 void Methods::cgiHandler(){
 Log("CGI HANLDER");
 	setCgiName();
-	if (_cgiName)
+	//if (_cgiName)
 Log("CGI PATH");
 	if(setCgiPath() == true){
 		setCgiArg();
@@ -384,7 +384,9 @@ void Methods::myPost() {
                 _ret = 201; // Créé
                 _response = "Fichier '" + fileName + "' téléchargé avec succès.";
                 return;
-            } else {
+            }
+            else
+            {
                 fillError("500"); // Erreur serveur interne
                 return;
             }
