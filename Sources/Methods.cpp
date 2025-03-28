@@ -12,7 +12,7 @@ Methods::Methods(Client *client, HttpRequest parsedRequest){
     _defaultErrors["500"] = "defaultErrors/500.html";//Internal Server Error
     _defaultErrors["501"] = "defaultErrors/501.html";//Not Implemented
 	_allowedTypes[".php"] = "application/php";
-	 _allowedTypes[".css"] = "text/css";
+	_allowedTypes[".css"] = "text/css";
     _allowedTypes[".html"] = "text/html";
     _allowedTypes[".htlm"] = "text/html";
     _allowedTypes[".jpeg"] = "image/jpeg";
