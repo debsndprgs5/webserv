@@ -163,22 +163,12 @@ LocationConfig *Methods::findConfig(std::string path, std::vector<LocationConfig
 }
 
 bool Methods::checkPhpCgi() {
-    std::string ext = ".php";
-    std::string uri = _parsedRequest.uri;
-    // Find the position of the query or fragment (if any)
-    size_t query_pos = uri.find_first_of("?#");
-    if (query_pos != std::string::npos) {
-        // Strip off everything from the first '?' or '#' onward
-        uri = uri.substr(0, query_pos);
-    }
-    // Convert the URI to lowercase for case-insensitive comparison
-    for (size_t i = 0; i < uri.size(); ++i) {
-        uri[i] = std::tolower(uri[i]);
-    }
-    // Check if the URI ends with ".php"
-    if (uri.size() >= ext.size() && uri.compare(uri.size() - ext.size(), ext.size(), ext) == 0) {
-        return true;
-    }
+	std::string type = _parsedRequest.headers["Content-Type"];
+	Log("TYPE FOUND :" + type);
+	if(type.empty())
+		return false;
+	if(type == "application/x-www-form-urlencoded")
+		return true;
     return false;
 }
 
@@ -229,11 +219,18 @@ void Methods::setCgiArg(){
 		_cgiArg = _parsedRequest.uri.substr(trigger+1);
 	}
 }
-
+//  bool Methods::checkExtention(std::string name){
+// 	size_t lastDot = name.find_last_of('.');
+// 	if(lastDot != std::string::npos){
+// 	std::string ext = name.substr(lastDot);
+// 	for(std::vector<std::string>::iterator it = _)	
+// 	}
+//  }
 
 void Methods::cgiHandler(){
-Log("CGI HABLDER");
+Log("CGI HANLDER");
 	setCgiName();
+	if (_cgiName)
 Log("CGI PATH");
 	if(setCgiPath() == true){
 		setCgiArg();
