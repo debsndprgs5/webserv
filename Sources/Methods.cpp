@@ -153,6 +153,7 @@ void Methods::myPost() {
 void Methods::myGet(){
 	std::string path;
 	path = findPath();//Needs to do aliases
+	Log("GET PATH :" + path);
 	if(access(path.c_str(), X_OK) == 0){
 		Log("ACCESS THINK IT'S EXEC");
 		cgiHandler();

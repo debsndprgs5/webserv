@@ -69,7 +69,9 @@ void Methods::setCgiArg(){
 
 
 void Methods::cgiHandler(){
+	Log("WHERE");
 	setCgiName();
+	Log("DO IT BLOCK");
 	if(setCgiPath() == true){
 		setCgiArg();
 	}
@@ -77,8 +79,10 @@ void Methods::cgiHandler(){
 		fillError("404");
 		return;
 	}
+	Log("HERE IS COOL");
 	if(isMethodAllowed(_methods, _parsedRequest.method) == true){
 		if(_parsedRequest.method == "GET"){
+			Log("ARE WE EVER HERE ?");
 			_content = runCgiAndGetOutput( _cgiName.c_str(), _cgiArg, 0, _cgiPath.c_str(), &_ret);
 		}
 		if(_parsedRequest.method == "POST"){			
@@ -135,6 +139,7 @@ int pipexec(char **arg, char **envp, int *ret, int fdtemp)
 	{
 		// Parent Process
 		int status;
+		Log("AFTER EXEC");
 		if (waitpid(pid, &status, 0) < 0)
 		{
 			*ret = -1;
@@ -187,10 +192,10 @@ void cgi_php_handler(int *ret, const char *scriptname, std::string *querystring,
 		std::strcpy(envp_arr[i], vec[i].c_str());
 	}
 	envp_arr[vec.size()] = NULL;
-
+	Log("CALLING THA PIPEX");
 	if (!pipexec((char **)arg, envp_arr, ret, fdtemp))
 		std::cout << "!!!!!!!!!!! SOMETHING WENT WRONG WITH PIPEX !!!!!!!!!!!" << std::endl;
-
+	Log("AFTER THE PIPEX");
 	for (size_t i = 0; i < vec.size(); ++i)
 	{
 		delete[] envp_arr[i];
@@ -208,10 +213,10 @@ std::string runCgiAndGetOutput(const char *scriptname, std::string &queryString,
 		perror("pipe");
 		return "";
 	}
-
+	Log("BEFORE CGI_PHP_HANDLER");
 	//Call CGI function with write pipe
 	cgi_php_handler(ret, scriptname, &queryString, reqType, path, pipefd[1]);
-	
+	Log("AFTER");
 	close(pipefd[1]);
 
 	//Read from the pipe
