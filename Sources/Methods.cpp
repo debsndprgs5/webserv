@@ -153,6 +153,11 @@ void Methods::myPost() {
 void Methods::myGet(){
 	std::string path;
 	path = findPath();//Needs to do aliases
+	if(access(path.c_str(), X_OK) == 0){
+		Log("ACCESS THINK IT'S EXEC");
+		cgiHandler();
+		return;
+	}
 	std::ifstream file(path.c_str()); // Open the file at the given path
 	if (file.is_open()) {
 		std::ostringstream contentStream;
@@ -170,7 +175,8 @@ void Methods::myGet(){
 void Methods::myDelete(){
 
 	std::string path;
-	path = findPath();//Needs to check for aliases 
+	path = findPath();//Needs to check for aliases
+	Log("PATH TO DELETE :" + path);
 	std::ifstream file(path.c_str());
 	if (file.is_open()) {
 		file.close(); // Close the file since it exists

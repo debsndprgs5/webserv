@@ -93,14 +93,7 @@ void Methods::cgiHandler(){
 
 bool Methods::checkPhpCgi() {
 
-	size_t lastDot = _parsedRequest.uri.find_last_of('.');
-	if(lastDot != std::string::npos){
-		std::string ext = _parsedRequest.uri.substr(lastDot, 4);
-		Log("EXT :" + ext);
-		if(ext != ".php")
-			return false;
-		return true;
-	}
+
 	std::string type = _parsedRequest.headers["Content-Type"];
 	if(type.empty())
 		return false;

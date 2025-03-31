@@ -22,6 +22,7 @@ std::string Methods::findLocationPath(std::string uri){
 }
 
 std::string Methods::findPath(){
+	Log("REQUEST URI :" + _parsedRequest.uri);
 	if(_pathWithAlias.empty())
 		return (_root+ _parsedRequest.uri);
 	std::string path = _root;
