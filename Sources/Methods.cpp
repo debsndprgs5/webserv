@@ -7,9 +7,10 @@
 Methods::Methods(Client *client, HttpRequest parsedRequest){
     _client = client;
     _parsedRequest = parsedRequest;
+
 	_defaultErrors["404"] = "defaultErrors/404.html";//NotFound
 	_defaultErrors["405"] = "defaultErrors/405.html";//NotAllowed
-	_defaultErrors["413"] = "defaultErrors/413.htlm";//Payload exceeds max_body_size.
+	_defaultErrors["413"] = "defaultErrors/413.html;";//Payload exceeds max_body_size.
     _defaultErrors["500"] = "defaultErrors/500.html";//Internal Server Error
     _defaultErrors["501"] = "defaultErrors/501.html";//Not Implemented
 	_allowedTypes[".php"] = "application/php";
@@ -28,6 +29,10 @@ Methods::Methods(Client *client, HttpRequest parsedRequest){
 	_mappedCodes[413] = "Paylods exceeds max_body_size";
 	_mappedCodes[500] = "Internal Server Error";
 	_mappedCodes[501] = "Not Implemented";
+	if(_client->getRequest().size() > _client->_server->getBodySize()){
+		fillError("413");
+		return;
+	}
 	if(parseHttpRequest(_client->getRequest(), _parsedRequest) == true){
 		if(checkPhpCgi() == true){
 			Log("Php extention founded");

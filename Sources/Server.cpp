@@ -52,6 +52,8 @@ void Server::setConfig(ServerConfig Conf){
 	_socketAddress.sin_family = AF_INET;
 	_socketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
 	setupLocations(Conf._location);
+	if(!_client_max_body_size)
+		_client_max_body_size = 999999;
 }
 
 
