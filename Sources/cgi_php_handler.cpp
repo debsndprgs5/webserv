@@ -13,6 +13,108 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include "../Includes/Methods.hpp"
+#include "methodsTools.cpp"
+
+
+
+
+void Methods::setCgiName(){
+	int trigger = _parsedRequest.uri.find_first_of('?');
+	std::string cleanUri = _parsedRequest.uri;
+	if(trigger != std::string::npos)
+		cleanUri = _parsedRequest.uri.substr(0, trigger);
+	int lastSlash = cleanUri.find_last_of('/');
+	if(lastSlash != std::string::npos){
+		_cgiName = cleanUri.substr(lastSlash);
+	}
+	else
+		_cgiName = cleanUri;
+}
+
+bool Methods::setCgiPath(){
+	int trigger = _parsedRequest.uri.find_first_of('?');
+	std::string cleanUri = _parsedRequest.uri;
+	if(trigger != std::string::npos)
+		cleanUri = _parsedRequest.uri.substr(0, trigger);
+	std::string searchLocationPath = findLocationPath(cleanUri);
+	LocationConfig *config = findConfig(searchLocationPath,  _client->_server->_locations);
+	if(config != NULL){
+		setConfig(config);
+	}
+	else 
+		setConfig();
+	_cgiPath = _root;
+	if(!_pathWithAlias.empty()){
+		_cgiPath += _pathWithAlias;
+	}
+	std::string fullPath = _cgiPath + _cgiName;
+	Log("FULL PATH :" + fullPath);
+	std::ifstream file(fullPath.c_str());
+	if(file.is_open()){
+		file.close();
+		return true;
+	}
+	else {
+		Log("RETRURN FALSE ?");
+		return false;
+	}
+
+}
+
+void Methods::setCgiArg(){
+	
+	size_t trigger = _parsedRequest.uri.find_first_of('?');
+	if(trigger != std::string::npos){
+		_cgiArg = _parsedRequest.uri.substr(trigger+1);
+	}
+}
+
+
+void Methods::cgiHandler(){
+	setCgiName();
+	if(setCgiPath() == true){
+		setCgiArg();
+	}
+	else{
+		fillError("404");
+		return;
+	}
+	if(isMethodAllowed(_methods, _parsedRequest.method) == true){
+		if(_parsedRequest.method == "GET"){
+			Log("CGI PATH :" + _cgiPath);
+			_content = runCgiAndGetOutput( _cgiName.c_str(), _cgiArg, 0, _cgiPath.c_str(), &_ret);
+		}
+		if(_parsedRequest.method == "POST"){			
+			_content = runCgiAndGetOutput(_cgiName.c_str(), _parsedRequest.body, 0, _cgiPath.c_str(), &_ret);
+		}
+		setResponse();
+	}
+	else
+		fillError("405");
+}
+
+
+bool Methods::checkPhpCgi() {
+
+	size_t lastDot = _parsedRequest.uri.find_last_of('.');
+	if(lastDot != std::string::npos){
+		std::string ext = _parsedRequest.uri.substr(lastDot, 4);
+		Log("EXT :" + ext);
+		if(ext != ".php")
+			return false;
+		return true;
+	}
+	std::string type = _parsedRequest.headers["Content-Type"];
+	Log("TYPE FOUND :" + type);
+	if(type.empty())
+		return false;
+	if(type == "application/x-www-form-urlencoded")
+		return true;
+    return false;
+}
+
+
+
 
 int pipexec(char **arg, char **envp, int *ret, int fdtemp) 
 {

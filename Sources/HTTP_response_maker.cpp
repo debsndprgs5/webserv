@@ -1,8 +1,37 @@
-#include <iostream>
-#include <sstream>
-#include <string>
-#include <ctime>
-#include <cstdlib>
+#include "../Includes/Methods.hpp"
+
+
+
+
+std::string Methods::findWhat(){
+	if(_mappedCodes.find(_ret) != _mappedCodes.end())
+		return (_mappedCodes[_ret]);
+	return("");
+}
+
+std::string Methods::findType(std::string uri){
+	size_t lastDot = uri.find_last_of('.');
+	if(_ret != 200)
+		return("text/html");
+	if(lastDot  == std::string::npos)
+		return("");//no extention
+	std::string extention = uri.substr(lastDot);
+	if(_allowedTypes.find(extention) != _allowedTypes.end())
+		return(_allowedTypes[extention]);
+	return("");
+}
+
+void Methods::setResponse(){
+	std::string what = findWhat();//like "OK" or "Not Found"
+	std::string type = findType(_parsedRequest.uri);//like .php .html
+	Log("_____BEFORE CREATING RESPONSE ___________\n\n");
+	Log("_____WHAT :" + what);
+	Log("_____TYPE :" + type);
+	Log("_____CONTENT\n" + _content);
+	_response = buildHttpResponse(_content, _ret, what, _client->_server->getName(), type);
+
+}
+
 
 std::string getCurrentDate()
 {

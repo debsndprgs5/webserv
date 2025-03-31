@@ -101,7 +101,7 @@ void Process::mainLoop(){
 	std::vector<struct pollfd> pendingClients;//Tracks of the new clients for outside loop
 	std::vector<struct pollfd> pendingDeco;//fd_array that need to be remove outside loop
 	while(run == true){
-		int resPoll = poll(_fdArray.data(), _fdArray.size(), -1);
+		int resPoll = poll(_fdArray.data(), _fdArray.size(), 0);
 		if(resPoll < 0){
 			freeProcess();
 			if(run == true)

@@ -2,6 +2,12 @@
 #include "Process.hpp"
 #include "Client.hpp"
 #include "ParsingDataStructs.hpp"
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <ctime>
+#include <cstdlib>
+
 class Client;
 
 class Methods{
