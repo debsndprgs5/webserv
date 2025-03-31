@@ -48,14 +48,12 @@ bool Methods::setCgiPath(){
 		_cgiPath += _pathWithAlias;
 	}
 	std::string fullPath = _cgiPath + _cgiName;
-	Log("FULL PATH :" + fullPath);
 	std::ifstream file(fullPath.c_str());
 	if(file.is_open()){
 		file.close();
 		return true;
 	}
 	else {
-		Log("RETRURN FALSE ?");
 		return false;
 	}
 
@@ -81,7 +79,6 @@ void Methods::cgiHandler(){
 	}
 	if(isMethodAllowed(_methods, _parsedRequest.method) == true){
 		if(_parsedRequest.method == "GET"){
-			Log("CGI PATH :" + _cgiPath);
 			_content = runCgiAndGetOutput( _cgiName.c_str(), _cgiArg, 0, _cgiPath.c_str(), &_ret);
 		}
 		if(_parsedRequest.method == "POST"){			
@@ -105,7 +102,6 @@ bool Methods::checkPhpCgi() {
 		return true;
 	}
 	std::string type = _parsedRequest.headers["Content-Type"];
-	Log("TYPE FOUND :" + type);
 	if(type.empty())
 		return false;
 	if(type == "application/x-www-form-urlencoded")

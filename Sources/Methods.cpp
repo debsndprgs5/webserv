@@ -39,7 +39,6 @@ Methods::Methods(Client *client, HttpRequest parsedRequest){
 			if(_parsedRequest.method == "GET")
 				_parsedRequest.uri += "index.html";
 		}
-		Log("___REQUESTED URI :"+_parsedRequest.uri);
     	handleRequest();
 		doMethod();
 	}
@@ -59,15 +58,12 @@ void Methods::handleRequest(){
 	std::string searchLocationPath;
 	LocationConfig *config;
     searchLocationPath = findLocationPath(_parsedRequest.uri);
-	Log("LOCATION PATH :"+searchLocationPath);
     config = findConfig(searchLocationPath, _client->_server->_locations);
 	if(config != NULL){
 		setConfig(config);
-		Log("CONFIG FOUND");
 	}
 	else {
 		setConfig();
-		Log("NO CONFIG FOUND ");
 	}
 }
 
@@ -84,7 +80,6 @@ void Methods::setConfig(LocationConfig *config){
 }
 
 void Methods::doMethod(){
-	std::cout << "\ntest printf : " << _parsedRequest.method << "\n";
 
 	if(isMethodAllowed(_methods, _parsedRequest.method) == true){
 		if(_parsedRequest.method == "POST")
@@ -130,7 +125,6 @@ void Methods::myPost() {
 
             // Construire le chemin complet pour sauvegarder le fichier
             std::string filePath =  _client->_server->getName() + "/" + fileName;
-			Log("FILEPATH :"+ filePath);
             std::ofstream outFile(filePath.c_str(), std::ios::binary);
             if (outFile.is_open()) {
                 outFile.write(fileContent.c_str(), fileContent.size());
@@ -152,7 +146,6 @@ void Methods::myPost() {
 
 
 void Methods::myGet(){
-	Log("MY GET");
 	std::string path;
 	path = findPath();//Needs to do aliases
 	std::ifstream file(path.c_str()); // Open the file at the given path

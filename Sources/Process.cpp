@@ -64,10 +64,7 @@ void Process::handleData(struct pollfd &it, std::vector<struct pollfd> &pendingD
         Client* client = _MappedClient[it.fd];
         // On ajoute les données reçues au buffer du client
         client->appendRawData(buffer, bytesRecv);
-        std::cout << buffer << std::endl;
-        std::cout << "Received " << bytesRecv << " bytes from client " << it.fd << std::endl;
-
-        // Si la requête est complète (headers + body selon Content-Length), on la traite
+   	    // Si la requête est complète (headers + body selon Content-Length), on la traite
         if (client->requestIsComplete())
         {
             proccessData(client, it.fd);
@@ -87,7 +84,6 @@ void Process::proccessData(Client *client, int fd){
 	else{
 		met->fillError("404");//Parsing error ? 
 		response = met->getResponse();
-		Log("Parsed error, sending error...."+ response);
 	}
 	//Here needs to add a check if response.length > 1024 -> boucle for 
 	send(fd, response.c_str(), response.length(), 0);

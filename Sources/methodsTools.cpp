@@ -98,25 +98,20 @@ LocationConfig *Methods::findConfig(std::string path, std::vector<LocationConfig
     std::string currentPath = "/";
     for (size_t i = 0; i < segments.size(); ++i) {
         for (size_t j = 0; j < locations.size(); ++j) {
-			Log("SEGEMENT :"+ segments[i]);
-			Log("LOCATION MATCH:" + locations[j]._location_match);
             if (locations[j]._location_match == segments[i]) {
                 if (i == segments.size() - 1) {
 					if(!locations[j]._alias.empty()){
 						_pathWithAlias += "/" + locations[j]._alias;
-						Log("UNEMPTY ALIAS FOUNDED");
 					}
 					else
 						_pathWithAlias += locations[j]._location_match;
                     return &locations[j];
                 } else if (!locations[j]._nested_locations.empty()) {
                     if(!locations[j]._alias.empty()){
-						Log("UNEMPTY ALIAS NESTED");
 						_pathWithAlias += "/" + locations[j]._alias;
 					}
 					else
 						_pathWithAlias += locations[j]._location_match;
-					Log("IS ALIAS A REAL THING :"+locations[j]._alias);
                     return findConfig(path.substr(path.find(segments[i]) + segments[i].length() + 1), locations[j]._nested_locations);
                 }
             }

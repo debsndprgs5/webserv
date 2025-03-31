@@ -125,7 +125,6 @@ int Server::startServer(){
 		return(ReturnWithMessage(1, _name + ": No root define"));
 	if(_sockets.empty())
 		return(ReturnWithMessage(1, _name+": Failure not avaible ports"));
-	printServ();
 	return (ReturnWithMessage(0, _name+": Succes binding sockets to server"));
 }
 

@@ -24,10 +24,6 @@ std::string Methods::findType(std::string uri){
 void Methods::setResponse(){
 	std::string what = findWhat();//like "OK" or "Not Found"
 	std::string type = findType(_parsedRequest.uri);//like .php .html
-	Log("_____BEFORE CREATING RESPONSE ___________\n\n");
-	Log("_____WHAT :" + what);
-	Log("_____TYPE :" + type);
-	Log("_____CONTENT\n" + _content);
 	_response = buildHttpResponse(_content, _ret, what, _client->_server->getName(), type);
 
 }

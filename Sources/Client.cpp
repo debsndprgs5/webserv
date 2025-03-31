@@ -9,9 +9,6 @@ Client::Client() : _ClientSocket(-1), _rawRequestBuffer("") {}
 
 Client::Client(int socket, Server *server)
     : _ClientSocket(socket), _server(server), _rawRequestBuffer("") {
-    Log("----------------Printing server THROUGH CLIENT-------------");
-    Log("SERVER NAME " + _server->getName());
-    Log("IP ADRS : " + _server->getIp());
 }
 
 Client::~Client(){
