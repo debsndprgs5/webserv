@@ -79,7 +79,6 @@ void Methods::cgiHandler(){
 	}
 	if(isMethodAllowed(_methods, _parsedRequest.method) == true){
 		if(_parsedRequest.method == "GET"){
-			Log("ARE WE EVER HERE ?");
 			_content = runCgiAndGetOutput( _cgiName.c_str(), _cgiArg, 0, _cgiPath.c_str(), &_ret, _parsedRequest.uri);
 		}
 		if(_parsedRequest.method == "POST"){			
@@ -93,8 +92,16 @@ void Methods::cgiHandler(){
 
 
 bool Methods::checkPhpCgi() {
-
-
+	size_t trigger= _parsedRequest.uri.find_first_of('?');
+	if(trigger != std::string::npos){
+		std::string firstCut = _parsedRequest.uri.substr(0, trigger);
+		size_t lastDot = firstCut.find_last_of('.');
+		if(lastDot != std::string::npos){
+			std::string ext = firstCut.substr(lastDot);
+				if(ext == ".php")
+					return true;
+		}
+	}
 	std::string type = _parsedRequest.headers["Content-Type"];
 	if(type.empty())
 		return false;

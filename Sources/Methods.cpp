@@ -83,7 +83,6 @@ void Methods::setConfig(LocationConfig *config){
 
 void Methods::doMethod(){
 	if(_client->getRequest().size() > _buffer_size){
-		Log("Finding PayLoad exess");
 		fillError("413");
 		return;
 	}
@@ -163,9 +162,7 @@ bool isExecutable(const char* path) {
 void Methods::myGet(){
 	std::string path;
 	path = findPath();//Needs to do aliases
-	Log("GET PATH :" + path);
 	if(isExecutable(path.c_str()) == true){
-		Log("ACCESS THINK IT'S EXEC");
 		cgiHandler();
 		return;
 	}
@@ -187,7 +184,6 @@ void Methods::myDelete(){
 
 	std::string path;
 	path = findPath();//Needs to check for aliases
-	Log("PATH TO DELETE :" + path);
 	std::ifstream file(path.c_str());
 	if (file.is_open()) {
 		file.close(); // Close the file since it exists
