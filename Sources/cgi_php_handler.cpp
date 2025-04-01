@@ -170,7 +170,7 @@ bool check_extention_php(const char *scriptname)
 void cgi_php_handler(int *ret, const char *scriptname, std::string *querystring, bool reqtype, const char *path, int fdtemp, std::string uri)
 {
 	std::vector<std::string> 	vec;
-	std::ostringstream 			script_filename, script_name, request_method, content_type, content_length, redirect_status, query_string, path_info, request_uri;
+	std::ostringstream 			script_filename, request_method, content_type, content_length, redirect_status, query_string, path_info, request_uri;
 	const char 					*arg[2];
 	std::string commandPath;
 
@@ -194,7 +194,6 @@ void cgi_php_handler(int *ret, const char *scriptname, std::string *querystring,
 	const char *method = (!reqtype) ? "GET" : "POST";
 	request_method << "REQUEST_METHOD=" << method;
 	vec.push_back(request_method.str());
-
 	if (reqtype)
 	{
 		content_type << "CONTENT_TYPE=application/x-www-form-urlencoded";
@@ -209,8 +208,10 @@ void cgi_php_handler(int *ret, const char *scriptname, std::string *querystring,
 	redirect_status << "REDIRECT_STATUS=200";
 	vec.push_back(redirect_status.str());
 
-	path_info << "PATH_INFO=";
+	path_info << "PATH_INFO=" << uri;
 	vec.push_back(path_info.str());
+
+	vec.push_back("SCRIPT_NAME=/ubuntu_cgi_tester");
 
 	request_uri << "REQUEST_URI=" << uri;
 	vec.push_back(request_uri.str());
