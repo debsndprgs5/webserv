@@ -1,0 +1,17 @@
+
+
+		une VM apline ou debian
+	Docker NGINX
+	Docker WordPress + php-fpm sans NGINX
+	Docker MariaBD sans NGINX
+
+	Volume1 -> dataBase WP
+	Volume2 -> files WP
+
+	Dockr-network
+
+
+2 USR -> 1 admin(sans "admin") , 1login()
+
+Nom de domaine rediriger vers ip locale
+	ysebban.42.fr

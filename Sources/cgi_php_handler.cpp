@@ -80,10 +80,10 @@ void Methods::cgiHandler(){
 	if(isMethodAllowed(_methods, _parsedRequest.method) == true){
 		if(_parsedRequest.method == "GET"){
 			Log("ARE WE EVER HERE ?");
-			_content = runCgiAndGetOutput( _cgiName.c_str(), _cgiArg, 0, _cgiPath.c_str(), &_ret);
+			_content = runCgiAndGetOutput( _cgiName.c_str(), _cgiArg, 0, _cgiPath.c_str(), &_ret, _parsedRequest.uri);
 		}
 		if(_parsedRequest.method == "POST"){			
-			_content = runCgiAndGetOutput(_cgiName.c_str(), _parsedRequest.body, 0, _cgiPath.c_str(), &_ret);
+			_content = runCgiAndGetOutput(_cgiName.c_str(), _parsedRequest.body, 0, _cgiPath.c_str(), &_ret, _parsedRequest.uri);
 		}
 		setResponse();
 	}

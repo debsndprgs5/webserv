@@ -21,19 +21,29 @@ std::string Methods::findLocationPath(std::string uri){
 	return("");
 }
 
+std::string getCleanUri(std::string uri){
+	std::string cleanUri = uri;
+	size_t trigger = cleanUri.find_first_of('?');
+	if(trigger != std::string::npos)
+		cleanUri.substr(trigger);
+	return (cleanUri);
+}
+
 std::string Methods::findPath(){
 	Log("REQUEST URI :" + _parsedRequest.uri);
+	std::string cleanUri = getCleanUri(_parsedRequest.uri);
+	Log("CLEANED URI :" + cleanUri);
 	if(_pathWithAlias.empty())
-		return (_root+ _parsedRequest.uri);
+		return (_root+ cleanUri);
 	std::string path = _root;
 	size_t firstSlash = _pathWithAlias.find_first_of('/');
 	if(firstSlash == 0)
 		path += _pathWithAlias;
 	else 
 		path += "/" + _pathWithAlias;
-	size_t lastSlash = _parsedRequest.uri.find_last_of('/');
+	size_t lastSlash = cleanUri.find_last_of('/');
 	if(lastSlash != std::string::npos)
-		path += _parsedRequest.uri.substr(lastSlash);
+		path += cleanUri.substr(lastSlash);
 	return (path);
 }
 
@@ -60,6 +70,7 @@ void Methods::fillError(std::string error_code){
         _ret = std::atoi(error_code.c_str());
     }
     else {
+		Log("File can't be open");
         // If the error file can't be opened, fallback to a generic error message
         _content = "<html><body><h1>Error " + error_code + "</h1><p>Unable to load the error page.</p></body></html>" + "DEBUG \n"+ errorPagePath;
         _ret = std::atoi(error_code.c_str());
