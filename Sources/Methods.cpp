@@ -2,7 +2,7 @@
 #include "post_tools.cpp"
 
 
-//setup client and default errors, do the method aked by client
+//setup client and default errors, do the method asked by client
 //doMethod changes the variable ->response(the full message send back to internet)
 Methods::Methods(Client *client, HttpRequest parsedRequest){
     _client = client;
@@ -10,7 +10,7 @@ Methods::Methods(Client *client, HttpRequest parsedRequest){
 
 	_defaultErrors["404"] = "defaultErrors/404.html";//NotFound
 	_defaultErrors["405"] = "defaultErrors/405.html";//NotAllowed
-	_defaultErrors["413"] = "defaultErrors/413.html;";//Payload exceeds max_body_size.
+	_defaultErrors["413"] = "defaultErrors/413.html";//Payload exceeds max_body_size.
     _defaultErrors["500"] = "defaultErrors/500.html";//Internal Server Error
     _defaultErrors["501"] = "defaultErrors/501.html";//Not Implemented
 	_allowedTypes[".php"] = "application/php";
@@ -29,10 +29,6 @@ Methods::Methods(Client *client, HttpRequest parsedRequest){
 	_mappedCodes[413] = "Paylods exceeds max_body_size";
 	_mappedCodes[500] = "Internal Server Error";
 	_mappedCodes[501] = "Not Implemented";
-	// if(_client->getRequest().size() > _client->_server->getBodySize()){
-	// 	fillError("413");
-	// 	return;
-	// }
 	if(parseHttpRequest(_client->getRequest(), _parsedRequest) == true){
 		if(checkPhpCgi() == true){
 			Log("Php extention founded");
@@ -76,16 +72,22 @@ void Methods::setConfig(){
 	_root = _client->_server->getRoot();
 	_methods = _client->_server->_methods;;
 	_php_cgi_path = _client->_server->getphpCgi();
+	_buffer_size = _client->_server->getBodySize();
 }
 
 void Methods::setConfig(LocationConfig *config){
 	_root = config->_root;
 	_methods = config->_methods;
 	_php_cgi_path = config->_php_cgi_path;
+	_buffer_size = config->_client_body_buffer_size;
 }
 
 void Methods::doMethod(){
-
+	if(_client->getRequest().size() > _buffer_size){
+		Log("Finding PayLoad exess");
+		fillError("413");
+		return;
+	}
 	if(isMethodAllowed(_methods, _parsedRequest.method) == true){
 		if(_parsedRequest.method == "POST")
 			myPost();

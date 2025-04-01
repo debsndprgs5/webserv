@@ -16,6 +16,7 @@ class Methods{
     private : 
     Client *_client;//also have his own reference to serv(Maybe I should put it in public ?)
     int _ret;
+	int _buffer_size;
     HttpRequest _parsedRequest;
 	std::string _pathWithAlias;//Path Updated with aliases
     std::string _response;//The full message the server wiil send

@@ -25,6 +25,7 @@ void Methods::setResponse(){
 	std::string what = findWhat();//like "OK" or "Not Found"
 	std::string type = findType(_parsedRequest.uri);//like .php .html
 	_response = buildHttpResponse(_content, _ret, what, _client->_server->getName(), type);
+	Log("RESPONSE :" + _response);
 
 }
 
