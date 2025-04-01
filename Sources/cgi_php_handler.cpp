@@ -170,7 +170,7 @@ bool check_extention_php(const char *scriptname)
 void cgi_php_handler(int *ret, const char *scriptname, std::string *querystring, bool reqtype, const char *path, int fdtemp, std::string uri)
 {
 	std::vector<std::string> 	vec;
-	std::ostringstream 			script_name, request_method, content_type, content_length, redirect_status, query_string, path_info, request_uri;
+	std::ostringstream 			script_filename, script_name, request_method, content_type, content_length, redirect_status, query_string, path_info, request_uri;
 	const char 					*arg[2];
 	std::string commandPath;
 
@@ -178,14 +178,14 @@ void cgi_php_handler(int *ret, const char *scriptname, std::string *querystring,
 	if (check_extention_php(scriptname))
 	{
 		arg[0] = "/usr/bin/php-cgi";
-		script_name << "SCRIPT_FILENAME=" << path << scriptname;
-		vec.push_back(script_name.str());
+		script_filename << "SCRIPT_FILENAME=" << path << scriptname;
+		vec.push_back(script_filename.str());
 	}
 	else
 	{
-		script_name << getCurrentWorkingDirectory() << "/" << path << scriptname;
-		vec.push_back(script_name.str());
-		commandPath = script_name.str();
+		script_filename << getCurrentWorkingDirectory() << "/" << path << scriptname;
+		vec.push_back(script_filename.str());
+		commandPath = script_filename.str();
 		arg[0] = commandPath.c_str();
 	}
 	arg[1] = NULL;
@@ -209,10 +209,10 @@ void cgi_php_handler(int *ret, const char *scriptname, std::string *querystring,
 	redirect_status << "REDIRECT_STATUS=200";
 	vec.push_back(redirect_status.str());
 
-	path_info << "PATH_INFO=/";
+	path_info << "PATH_INFO=";
 	vec.push_back(path_info.str());
 
-	request_uri << "REQUEST_URI=" << ;
+	request_uri << "REQUEST_URI=" << uri;
 	vec.push_back(request_uri.str());
 
 	query_string << "QUERY_STRING=" << *querystring;
@@ -238,7 +238,7 @@ void cgi_php_handler(int *ret, const char *scriptname, std::string *querystring,
 
 
 // Use a pipe to start the CGI and get output as a string
-std::string runCgiAndGetOutput(const char *scriptname, std::string &queryString, bool reqType, const char *path, int *ret)
+std::string runCgiAndGetOutput(const char *scriptname, std::string &queryString, bool reqType, const char *path, int *ret, std::string uri)
 {
 	// Create a pipe : pipefd[0] read, pipefd[1] write
 	int pipefd[2];
@@ -248,7 +248,7 @@ std::string runCgiAndGetOutput(const char *scriptname, std::string &queryString,
 		return "";
 	}
 	//Call CGI function with write pipe
-	cgi_php_handler(ret, scriptname, &queryString, reqType, path, pipefd[1]);
+	cgi_php_handler(ret, scriptname, &queryString, reqType, path, pipefd[1], uri);
 	close(pipefd[1]);
 
 	//Read from the pipe

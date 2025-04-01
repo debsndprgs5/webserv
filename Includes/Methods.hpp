@@ -59,7 +59,7 @@ class Methods{
 	LocationConfig *findConfig(std::string path, std::vector<LocationConfig> &locations);
 
 };
-std::string runCgiAndGetOutput(const char *scriptname, std::string &queryString, bool reqType, const char *path, int *ret);
+std::string runCgiAndGetOutput(const char *scriptname, std::string &queryString, bool reqType, const char *path, int *ret, std::string uri);
 std::string extractBoundary(const std::string& contentType);
 std::vector<std::string> splitBodyByBoundary(const std::string& body, const std::string& boundary);
 bool isFilePart(const std::string& part);
