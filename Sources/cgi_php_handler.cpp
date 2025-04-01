@@ -100,10 +100,17 @@ bool Methods::checkPhpCgi() {
 		return false;
 	if(type == "application/x-www-form-urlencoded")
 		return true;
-    return false;
+	return false;
 }
 
 
+std::string getCurrentWorkingDirectory() {
+	char buffer[2048];
+	if (getcwd(buffer, sizeof(buffer)) != NULL)
+		return std::string(buffer);
+	else
+		return std::string();
+}
 
 
 int pipexec(char **arg, char **envp, int *ret, int fdtemp) 
@@ -152,14 +159,36 @@ int pipexec(char **arg, char **envp, int *ret, int fdtemp)
 	}
 }
 
-void cgi_php_handler(int *ret, const char *scriptname, std::string *querystring, bool reqtype, const char *path, int fdtemp)
+bool check_extention_php(const char *scriptname)
 {
-	const char *arg[] = { "/usr/bin/php-cgi", NULL };
-	std::vector<std::string> vec;
-	std::ostringstream script_name, request_method, content_type, content_length, redirect_status, query_string;
-	
-	script_name << "SCRIPT_FILENAME=" << path << "/" << scriptname;
-	vec.push_back(script_name.str());
+	std::string str(scriptname);
+	if (str[str.size() - 1] == 'p' && str[str.size() - 2] == 'h' && str[str.size() - 3] == 'p')
+		return true;
+	return false;
+}
+
+void cgi_php_handler(int *ret, const char *scriptname, std::string *querystring, bool reqtype, const char *path, int fdtemp, std::string uri)
+{
+	std::vector<std::string> 	vec;
+	std::ostringstream 			script_name, request_method, content_type, content_length, redirect_status, query_string, path_info, request_uri;
+	const char 					*arg[2];
+	std::string commandPath;
+
+	arg[0] = NULL;
+	if (check_extention_php(scriptname))
+	{
+		arg[0] = "/usr/bin/php-cgi";
+		script_name << "SCRIPT_FILENAME=" << path << scriptname;
+		vec.push_back(script_name.str());
+	}
+	else
+	{
+		script_name << getCurrentWorkingDirectory() << "/" << path << scriptname;
+		vec.push_back(script_name.str());
+		commandPath = script_name.str();
+		arg[0] = commandPath.c_str();
+	}
+	arg[1] = NULL;
 
 	// 0 = GET, 1 = POST
 	const char *method = (!reqtype) ? "GET" : "POST";
@@ -175,8 +204,16 @@ void cgi_php_handler(int *ret, const char *scriptname, std::string *querystring,
 	content_length << "CONTENT_LENGTH=" << (reqtype ? querystring->size() : 0);
 	vec.push_back(content_length.str());
 
+	vec.push_back("SERVER_PROTOCOL=HTTP/1.1");
+
 	redirect_status << "REDIRECT_STATUS=200";
 	vec.push_back(redirect_status.str());
+
+	path_info << "PATH_INFO=/";
+	vec.push_back(path_info.str());
+
+	request_uri << "REQUEST_URI=" << ;
+	vec.push_back(request_uri.str());
 
 	query_string << "QUERY_STRING=" << *querystring;
 	vec.push_back(query_string.str());
@@ -188,14 +225,17 @@ void cgi_php_handler(int *ret, const char *scriptname, std::string *querystring,
 		std::strcpy(envp_arr[i], vec[i].c_str());
 	}
 	envp_arr[vec.size()] = NULL;
+	
 	if (!pipexec((char **)arg, envp_arr, ret, fdtemp))
 		std::cout << "!!!!!!!!!!! SOMETHING WENT WRONG WITH PIPEX !!!!!!!!!!!" << std::endl;
+	
 	for (size_t i = 0; i < vec.size(); ++i)
 	{
 		delete[] envp_arr[i];
 	}
 	delete[] envp_arr;
 }
+
 
 // Use a pipe to start the CGI and get output as a string
 std::string runCgiAndGetOutput(const char *scriptname, std::string &queryString, bool reqType, const char *path, int *ret)

@@ -35,7 +35,6 @@ Methods::Methods(Client *client, HttpRequest parsedRequest){
 	// }
 	if(parseHttpRequest(_client->getRequest(), _parsedRequest) == true){
 		if(checkPhpCgi() == true){
-			Log("Php extention founded");
 			cgiHandler();
 			return;
 		}
@@ -148,6 +147,7 @@ void Methods::myPost() {
     // Si aucune partie fichier n'a été trouvée
     fillError("404");
 }
+
 bool isExecutable(const char* path) {
     struct stat sb;
     if (stat(path, &sb) == 0) {
