@@ -29,10 +29,10 @@ Methods::Methods(Client *client, HttpRequest parsedRequest){
 	_mappedCodes[413] = "Paylods exceeds max_body_size";
 	_mappedCodes[500] = "Internal Server Error";
 	_mappedCodes[501] = "Not Implemented";
-	if(_client->getRequest().size() > _client->_server->getBodySize()){
-		fillError("413");
-		return;
-	}
+	// if(_client->getRequest().size() > _client->_server->getBodySize()){
+	// 	fillError("413");
+	// 	return;
+	// }
 	if(parseHttpRequest(_client->getRequest(), _parsedRequest) == true){
 		if(checkPhpCgi() == true){
 			Log("Php extention founded");
@@ -148,13 +148,21 @@ void Methods::myPost() {
     // Si aucune partie fichier n'a été trouvée
     fillError("404");
 }
+bool isExecutable(const char* path) {
+    struct stat sb;
+    if (stat(path, &sb) == 0) {
+        // Vérifie les permissions d'exécution pour le propriétaire, le groupe ou les autres
+        return (sb.st_mode & S_IXUSR) || (sb.st_mode & S_IXGRP) || (sb.st_mode & S_IXOTH);
+    }
+    return false; // En cas d'erreur, considère que le fichier n'est pas exécutable
+}
 
 
 void Methods::myGet(){
 	std::string path;
 	path = findPath();//Needs to do aliases
 	Log("GET PATH :" + path);
-	if(access(path.c_str(), X_OK) == 0){
+	if(isExecutable(path.c_str()) == true){
 		Log("ACCESS THINK IT'S EXEC");
 		cgiHandler();
 		return;

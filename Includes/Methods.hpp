@@ -7,6 +7,8 @@
 #include <string>
 #include <ctime>
 #include <cstdlib>
+#include <unistd.h>
+#include <sys/stat.h>
 
 class Client;
 
