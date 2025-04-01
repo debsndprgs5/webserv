@@ -30,9 +30,7 @@ std::string getCleanUri(std::string uri){
 }
 
 std::string Methods::findPath(){
-	Log("REQUEST URI :" + _parsedRequest.uri);
 	std::string cleanUri = getCleanUri(_parsedRequest.uri);
-	Log("CLEANED URI :" + cleanUri);
 	if(_pathWithAlias.empty())
 		return (_root+ cleanUri);
 	std::string path = _root;
@@ -70,7 +68,6 @@ void Methods::fillError(std::string error_code){
         _ret = std::atoi(error_code.c_str());
     }
     else {
-		Log("File can't be open");
         // If the error file can't be opened, fallback to a generic error message
         _content = "<html><body><h1>Error " + error_code + "</h1><p>Unable to load the error page.</p></body></html>" + "DEBUG \n"+ errorPagePath;
         _ret = std::atoi(error_code.c_str());
