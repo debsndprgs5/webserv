@@ -18,9 +18,15 @@ Process::~Process(){
 void Process::acceptNewClient(struct pollfd &it, std::vector<struct pollfd> &pendingClients, Server *server){
 		int SocketClient = accept(it.fd, NULL, NULL);
 		if (SocketClient < 0){
-			std::cerr << "Error accepting connection"<< std::endl;
+			close(SocketClient);
+			Log("Error accepting connection");
 			return ;
 		}
+		if (fcntl(SocketClient, F_SETFL, O_NONBLOCK) < 0) {
+			close(SocketClient);
+			Log("Error setting non-blocking mode");
+			return;
+		}		
 		Client *current = new Client(SocketClient, server);
 		struct pollfd fds;
 		fds.fd= current->getSocketClient();
@@ -48,46 +54,87 @@ void Process::handleData(struct pollfd &it, std::vector<struct pollfd> &pendingD
 {
 	char buffer[1024] = {0};
 	int bytesRecv = recv(it.fd, buffer, sizeof(buffer), 0);
-    
+
     if (bytesRecv < 0)
-        Log("Error or client disconnected while receiving data");
-    else if (bytesRecv == 0)
     {
         Log("Client disconnected");
         struct pollfd tmp;
         tmp.fd = it.fd;
         pendingDeco.push_back(tmp);
     }
+	else if(bytesRecv == 0){
+		Client* client = _MappedClient[it.fd];
+		if(client->getRecveCheck() == false)
+			client->setRecveCheck(true);
+		else if(client->getRecveCheck() == true){
+			Log("Client disconnected");
+        	struct pollfd tmp;
+       		tmp.fd = it.fd;
+       		pendingDeco.push_back(tmp);
+		}
+	}
     else
     {
         // On récupère le client associé via _MappedClient
         Client* client = _MappedClient[it.fd];
+		client->setRecveCheck(false);
         // On ajoute les données reçues au buffer du client
         client->appendRawData(buffer, bytesRecv);
    	    // Si la requête est complète (headers + body selon Content-Length), on la traite
         if (client->requestIsComplete())
         {
-            proccessData(client, it.fd);
+            proccessData(client, it.fd, pendingDeco);
             // Une fois traitée, on vide le buffer pour la prochaine requête
             client->clearRawData();
         }
     }
 }
 
-void Process::proccessData(Client *client, int fd){
-	HttpRequest parsedRequest;
-	std::string response;
-	bool isGood = parseHttpRequest(client->getRequest(), parsedRequest);
-	Methods *met= new Methods(client, parsedRequest);
-	if(isGood == true)
-		response = met->getResponse();
-	else{
-		met->fillError("404");//Parsing error ? 
-		response = met->getResponse();
-	}
-	//Here needs to add a check if response.length > 1024 -> boucle for 
-	send(fd, response.c_str(), response.length(), 0);
-	delete met;
+int Process::sendCheck(int fd, const char* data, size_t dataLength, size_t bytesSent) {
+    if (bytesSent >= dataLength) {
+        // All data has been sent
+		Client* client = _MappedClient[fd];
+        client->setSendTrigger(0);
+        return 0;
+    }
+    int ret_send = send(fd, data + bytesSent, dataLength - bytesSent, 0);
+    if (ret_send < 0) {
+        Client* client = _MappedClient[fd];
+		client->setBytesSend(bytesSent);
+		client->setLeftover(std::string (data+bytesSent, dataLength - bytesSent));
+		client->setSendTrigger(true);
+		Log("LATER RETRY CALLED");
+        return -1; // Retry later 
+    } else if (ret_send == 0) {
+        // Connection lost
+        return 0;
+    } else {
+        // Successfully sent some bytes, recursively send the remaining data
+        return sendCheck(fd, data, dataLength, bytesSent + ret_send);
+    }
+}
+
+
+void Process::proccessData(Client *client, int fd, std::vector<struct pollfd>& pendingDeco) {
+    HttpRequest parsedRequest;
+    std::string response;
+    bool isGood = parseHttpRequest(client->getRequest(), parsedRequest);
+    Methods *met = new Methods(client, parsedRequest);
+    if (isGood == true) {
+        response = met->getResponse();
+    } else {
+        met->fillError("404"); // Parsing error?
+        response = met->getResponse();
+    }
+    // Send the response in chunks using sendCheck
+    int isSent = sendCheck(fd, response.c_str(), response.length());
+    if (isSent == 0) {
+        Log("Failed to send data to client");
+        struct pollfd tmp;
+        tmp.fd = fd;
+        pendingDeco.push_back(tmp); // Mark client for disconnection
+    }
+    delete met;
 }
 
 //Call poll on _FdArray, if POLLIN is recived : new connection, 
@@ -97,7 +144,7 @@ void Process::mainLoop(){
 	std::vector<struct pollfd> pendingClients;//Tracks of the new clients for outside loop
 	std::vector<struct pollfd> pendingDeco;//fd_array that need to be remove outside loop
 	while(run == true){
-		int resPoll = poll(_fdArray.data(), _fdArray.size(), 0);
+		int resPoll = poll(_fdArray.data(), _fdArray.size(), 10);
 		if(resPoll < 0){
 			freeProcess();
 			if(run == true)
@@ -108,8 +155,21 @@ void Process::mainLoop(){
 				std::map<int, Server*>::iterator itServ = _MappedServ.find(it->fd);
 				if (itServ != _MappedServ.end()) {
 					acceptNewClient(*it, pendingClients, itServ->second);
-				} else if (_MappedClient.find(it->fd) != _MappedClient.end() && !isPendingDeco(*it, pendingDeco)) {
-					handleData(*it, pendingDeco);
+				}
+				else if (_MappedClient.find(it->fd) != _MappedClient.end() && !isPendingDeco(*it, pendingDeco))
+				{
+					Client* cur = _MappedClient[it->fd];
+					if(cur->getSendTrigger() == true){
+						std::string leftover = cur->getLeftover();
+						int success = sendCheck(it->fd, leftover.c_str(), leftover.length(), cur->getBytesSend());
+						if(!success){
+							struct pollfd tmp;
+            				tmp.fd = it->fd;
+            				pendingDeco.push_back(tmp);
+        				}
+					}
+					else
+						handleData(*it, pendingDeco);
 				}
 			}
 		}
@@ -117,8 +177,6 @@ void Process::mainLoop(){
 			close(it->fd);
 			delete _MappedClient[it->fd];
 			_MappedClient.erase(it->fd);
-		//	delete pendingDeco[it->fd];
-		//	_fdArray.erase(it);
 		}
 	_fdArray.insert(_fdArray.end(), pendingClients.begin(), pendingClients.end());
 	pendingClients.clear();

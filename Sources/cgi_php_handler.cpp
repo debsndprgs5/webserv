@@ -98,9 +98,20 @@ bool Methods::checkPhpCgi() {
 		size_t lastDot = firstCut.find_last_of('.');
 		if(lastDot != std::string::npos){
 			std::string ext = firstCut.substr(lastDot);
-				if(ext == ".php")
-					return true;
+			if(ext == ".php")
+				return true;
+			else
+				return false;
+
 		}
+	}
+	size_t dot = _parsedRequest.uri.find_first_of('.');
+	if(dot != std::string::npos){
+		std::string ext = _parsedRequest.uri.substr(dot);
+		if(ext == ".php")
+			return true;
+		else
+			return false;
 	}
 	std::string type = _parsedRequest.headers["Content-Type"];
 	if(type.empty())

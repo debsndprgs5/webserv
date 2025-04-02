@@ -25,7 +25,7 @@ std::string getCleanUri(std::string uri){
 	std::string cleanUri = uri;
 	size_t trigger = cleanUri.find_first_of('?');
 	if(trigger != std::string::npos)
-		cleanUri.substr(trigger);
+		cleanUri = cleanUri.substr(trigger);
 	return (cleanUri);
 }
 

@@ -11,6 +11,10 @@ class Server;
 class Client {
 private:
     int _ClientSocket;
+    bool _recve_check;
+    size_t _bytesSend;
+    bool _sendTrigger;
+    std::string _leftoverSend;
     std::string _rawRequestBuffer; // Buffer pour accumuler les données brutes de la requête
 
 public:
@@ -25,6 +29,14 @@ public:
     // Accesseurs et mutateurs
     void setSocketClient(int socket, Server *server);
     int getSocketClient();
+    bool getRecveCheck();
+    bool getSendTrigger();
+    size_t getBytesSend();
+    std::string getLeftover();
+    void setBytesSend(size_t bytes);
+    void setLeftover(std::string leftover);
+    void setRecveCheck(bool state);
+    void setSendTrigger(bool state);
 
     // Méthodes de gestion du buffer
     void appendRawData(const char* data, size_t len);

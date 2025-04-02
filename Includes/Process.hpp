@@ -10,6 +10,8 @@
 #include <poll.h>
 #include <csignal>
 #include <cstdio>
+#include <fcntl.h>
+
 class Server;
 class Client;
 class Methods;
@@ -32,7 +34,8 @@ class Process{
     void freeProcess();
     int  start(std::vector<ServerConfig> servers);
     void setRunning();
-    void proccessData(Client *client, int fd);
+    void proccessData(Client *client, int fd, std::vector<struct pollfd> &pendingDeco);
     bool isPendingDeco(struct pollfd &current, std::vector<struct pollfd> &pendingDeco);
+    int sendCheck(int fd, const char* data, size_t dataLength, size_t bytesSent = 0);
 };
 void sigHandler(int sig);

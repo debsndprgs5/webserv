@@ -158,11 +158,22 @@ bool isExecutable(const char* path) {
     return false; // En cas d'erreur, considère que le fichier n'est pas exécutable
 }
 
+bool isHtml(std::string path){
+	size_t LastDot = path.find_last_of('.');
+	if(LastDot != std::string::npos){
+		std::string ext = path.substr(LastDot);
+		Log("EXT :" + ext);
+		if(ext == ".html")
+			return true;
+	}
+	return false;
+}
+
 
 void Methods::myGet(){
 	std::string path;
 	path = findPath();//Needs to do aliases
-	if(isExecutable(path.c_str()) == true){
+	if(isExecutable(path.c_str()) == true && isHtml(path) == false){
 		cgiHandler();
 		return;
 	}

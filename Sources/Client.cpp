@@ -8,7 +8,7 @@
 Client::Client() : _ClientSocket(-1), _rawRequestBuffer("") {}
 
 Client::Client(int socket, Server *server)
-    : _ClientSocket(socket), _server(server), _rawRequestBuffer("") {
+    : _ClientSocket(socket), _server(server), _rawRequestBuffer(""), _recve_check(false) , _sendTrigger(false){
 }
 
 Client::~Client(){
@@ -38,6 +38,37 @@ int Client::getSocketClient(){
 // Returns full request buffer
 std::string &Client::getRequest(){
     return _rawRequestBuffer;
+}
+
+bool Client::getRecveCheck(){
+    return _recve_check;
+}
+
+bool Client::getSendTrigger(){
+    return _sendTrigger;
+}
+
+size_t Client::getBytesSend(){
+    return _bytesSend;
+}
+
+std::string Client::getLeftover(){
+    return _leftoverSend;
+}
+
+void Client::setBytesSend(size_t bytes){
+    _bytesSend = bytes;
+}
+void Client::setLeftover(std::string leftover){
+    _leftoverSend = leftover;
+}
+
+void Client::setSendTrigger(bool state){
+    _sendTrigger = state;
+}
+
+void Client::setRecveCheck(bool state){
+    _recve_check = state;
 }
 
 // Adds received data in buffer

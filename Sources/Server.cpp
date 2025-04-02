@@ -68,6 +68,8 @@ LocationConfig Server::setLocations(LocationConfig location){
 		Conf._methods = _methods;
 	if(Conf._php_cgi_path.empty())
 		Conf._php_cgi_path = _php_cgi_path;
+	if(!Conf._client_body_buffer_size)
+		Conf._client_body_buffer_size = _client_max_body_size;
 	if(!Conf._nested_locations.empty()){
 		size_t i = 0;
 		for(std::vector<LocationConfig>::iterator it = location._nested_locations.begin(); it != location._nested_locations.end(); it ++){
@@ -98,13 +100,19 @@ int Server::startServer(){
 		int temp = 1;
 		_socketAddress.sin_port = htons(*it);
 		if (newSock < 0){
+			close(newSock);
 			Log(_name+": Can't create newSocket");
+			continue;
+		}
+		// Set the socket to non-blocking mode
+		if (fcntl(newSock, F_SETFL, O_NONBLOCK) < 0) {
+			close(newSock);
+			Log(_name + ": Error setting non-blocking mode");
 			continue;
 		}
 		if(_ipAdrs.empty()||inet_pton(AF_INET, _ipAdrs.c_str(), &_socketAddress.sin_addr) <= 0){
 			close(newSock);
 			Log(_name+": Invalid IP address");
-			std::cout << _ipAdrs << std::endl;
 			continue;
 		}
 		if (setsockopt(newSock, SOL_SOCKET, SO_REUSEADDR, &temp, sizeof(int)) == -1) {

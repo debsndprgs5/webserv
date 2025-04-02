@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <cstdio>
+#include <fcntl.h>
 #include "Tools.hpp"
 #include "ParsingDataStructs.hpp"
 
