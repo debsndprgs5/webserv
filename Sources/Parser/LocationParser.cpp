@@ -59,6 +59,11 @@ void setLocationCgiPass(LocationConfig &loc, const std::vector<std::string>& par
         loc._cgi_pass = parts[1];
 }
 
+void setLocationDefaultDirRedirect(LocationConfig &loc, const std::vector<std::string>& parts) {
+  if (parts.size() >= 2)
+    loc._default_dir_redirect = parts[1];
+}
+
 
 // ------------------------------------------------------------------
 // Parsing location blocks recursively
@@ -107,6 +112,7 @@ LocationConfig parseLocation(std::ifstream &in, const std::string &firstLine)
     locationDirectives["alias"] = setLocationAlias;
     locationDirectives["client_body_buffer_size"] = setLocationClientBodyBufferSize;
     locationDirectives["cgi_pass"] = setLocationCgiPass;
+    locationDirectives["default_dir_redirect"] = setLocationDefaultDirRedirect;
 
     std::string line;
     bool closingFound = false;
@@ -138,6 +144,6 @@ LocationConfig parseLocation(std::ifstream &in, const std::string &firstLine)
     }
     if (!closingFound)
         std::cerr << "Warning: Closing brace for Location block not found. Forcing closure." << std::endl;
-	
+
     return loc;
 }

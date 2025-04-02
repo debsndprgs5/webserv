@@ -33,6 +33,7 @@ struct LocationConfig {
     std::string _path;            // physical path or alias
     std::string _name;            // (optional)
     std::string _root;
+    std::string _default_dir_redirect;
     bool _auto_index;
     std::vector<std::string> _methods;
     std::vector<std::string> _index;
@@ -51,6 +52,7 @@ struct LocationConfig {
 
 struct ServerConfig {
     std::string _ipAdr;
+    std::string _default_dir_redirect;
     std::vector<int> _listen;
     std::vector<std::string> _server_name;
     std::vector<std::string> _access_log;
