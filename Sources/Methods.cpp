@@ -151,6 +151,7 @@ void Methods::myPost() {
 
 bool isExecutable(const char* path) {
     struct stat sb;
+	return false;
     if (stat(path, &sb) == 0) {
         // Vérifie les permissions d'exécution pour le propriétaire, le groupe ou les autres
         return (sb.st_mode & S_IXUSR) || (sb.st_mode & S_IXGRP) || (sb.st_mode & S_IXOTH);

@@ -98,6 +98,7 @@ bool Methods::checkPhpCgi() {
 		size_t lastDot = firstCut.find_last_of('.');
 		if(lastDot != std::string::npos){
 			std::string ext = firstCut.substr(lastDot);
+			Log("EXT FOUND :" + ext);
 			if(ext == ".php")
 				return true;
 			else
@@ -114,7 +115,6 @@ bool Methods::checkPhpCgi() {
 			return false;
 	}
 	std::string type = _parsedRequest.headers["Content-Type"];
-	if(type.empty())
 		return false;
 	if(type == "application/x-www-form-urlencoded")
 		return true;
@@ -259,6 +259,8 @@ void cgi_php_handler(int *ret, const char *scriptname, std::string *querystring,
 // Use a pipe to start the CGI and get output as a string
 std::string runCgiAndGetOutput(const char *scriptname, std::string &queryString, bool reqType, const char *path, int *ret, std::string uri)
 {
+	Log("FILENAME :");
+	std::cout << scriptname << std::endl;
 	// Create a pipe : pipefd[0] read, pipefd[1] write
 	int pipefd[2];
 	if (pipe(pipefd) < 0)
