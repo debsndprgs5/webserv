@@ -37,5 +37,6 @@ class Process{
     void proccessData(Client *client, int fd, std::vector<struct pollfd> &pendingDeco);
     bool isPendingDeco(struct pollfd &current, std::vector<struct pollfd> &pendingDeco);
     int sendCheck(int fd, const char* data, size_t dataLength, size_t bytesSent = 0);
+	
 };
 void sigHandler(int sig);

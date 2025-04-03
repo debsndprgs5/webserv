@@ -10,14 +10,14 @@ class Server;
 
 class Client {
 private:
-	int				ClientSocket;
+	int				_ClientSocket;
 	bool			_recve_check;
 	size_t			_bytesSend;
 	bool			_sendTrigger;
 	std::string		_leftoverSend;
 	std::string		_rawRequestBuffer;
-	int				pipe;
-	int				fd;
+	int				_pipe;
+	int				_fd;
 	int				_ret;
 
 public:
@@ -43,7 +43,7 @@ public:
 	void setCgiPipe(int pipe);
 	void setCgiPid(int fd);
 	void setRet(int ret);
-	std::string Client::getCgiOutput();
+	std::string getCgiOutput();
 
 	// Méthodes de gestion du buffer
 	void appendRawData(const char* data, size_t len);
