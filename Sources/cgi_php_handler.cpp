@@ -72,13 +72,14 @@ void Methods::cgiHandler(){
 		return;
 	}
 	if(isMethodAllowed(_methods, _parsedRequest.method) == true){
-		if(_parsedRequest.method == "GET"){
-			_content = runCgiAndGetOutput( _cgiName.c_str(), _cgiArg, 0, _cgiPath.c_str(), &_ret, _parsedRequest.uri, _fdArray);
+		if(_parsedRequest.method == "GET")
+		{
+			startCgiAsync(0);
 		}
-		if(_parsedRequest.method == "POST"){			
-			_content = runCgiAndGetOutput(_cgiName.c_str(), _parsedRequest.body, 0, _cgiPath.c_str(), &_ret, _parsedRequest.uri, _fdArray);
+		if(_parsedRequest.method == "POST")
+		{			
+			startCgiAsync(1);
 		}
-		setResponse();
 	}
 	else
 		fillError("405");
@@ -244,7 +245,7 @@ void Methods::cgi_php_handler(int *ret, const char *scriptname, std::string *que
 
 
 // Function to start handling CGI in a asynchrone way
-void Methods::startCgiAsync() {
+void Methods::startCgiAsync(int reqtype) {
 
 	int pipefd[2];
 	if (pipe(pipefd) < 0) {
@@ -253,9 +254,9 @@ void Methods::startCgiAsync() {
 		return;
 	}
 	// Start the CGI using pipefd[1] for writing
-	cgi_php_handler(&_ret, _cgiName.c_str(), &_cgiArg, reqType, _cgiPath.c_str(), pipefd[1], _parsedRequest.uri);
+	cgi_php_handler(&_ret, _cgiName.c_str(), &_cgiArg, reqtype, _cgiPath.c_str(), pipefd[1], _parsedRequest.uri);
 	close(pipefd[1]);
-	client->setRet(_ret);
+	_client->setRet(_ret);
 	// Put the pipe in non-blocking way
 	int flags = fcntl(pipefd[0], F_GETFL, 0);
 	fcntl(pipefd[0], F_SETFL, flags | O_NONBLOCK);
