@@ -22,7 +22,7 @@ void Process::acceptNewClient(struct pollfd &it, std::vector<struct pollfd> &pen
 			Log("Error accepting connection");
 			return ;
 		}
-		if (fcntl(SocketClient, F_SETFL, O_NONBLOCK) < 0) {
+		if (fcntl(SocketClient, F_SETFL, O_NONBLOCK) < 0){
 			close(SocketClient);
 			Log("Error setting non-blocking mode");
 			return;
