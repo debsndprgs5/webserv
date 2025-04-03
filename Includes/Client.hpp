@@ -46,6 +46,7 @@ public:
 	void appendRawData(const char* data, size_t len);
 	bool requestIsComplete() const;
 	std::string &getRequest();
+	std::string getResponse(std::string content);
 	void clearRawData();
 
 	bool fillRequest(char *buffer);

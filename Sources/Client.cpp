@@ -120,8 +120,8 @@ bool Client::requestIsComplete() const
     return true;
 }
 
-std::string Client::getResponse(std::string body, int code, std::string statusMessage){
+std::string Client::getResponse(std::string content){
 
-	std::string response = buildHttpResponse(body, code, statusMessage, _server->getName(), "application/php");
+	std::string response = buildHttpResponse(body, _ret, "", _server->getName(), "application/php");
 	return response;
 }

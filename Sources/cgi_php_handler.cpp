@@ -255,7 +255,7 @@ void Methods::startCgiAsync() {
 	// Start the CGI using pipefd[1] for writing
 	cgi_php_handler(&_ret, _cgiName.c_str(), &_cgiArg, reqType, _cgiPath.c_str(), pipefd[1], _parsedRequest.uri);
 	close(pipefd[1]);
-
+	client->setRet(_ret);
 	// Put the pipe in non-blocking way
 	int flags = fcntl(pipefd[0], F_GETFL, 0);
 	fcntl(pipefd[0], F_SETFL, flags | O_NONBLOCK);
