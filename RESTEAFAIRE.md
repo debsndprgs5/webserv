@@ -7,9 +7,9 @@
 
 # Works with nc 
 
-# Loop send 
+# Loop send BUG 
 
-# check returns for send/recve 
+# check returns for send/recve FAIT MAIS BUG
 
-# poll timeout 
+# poll timeout  PAREIL 
     
