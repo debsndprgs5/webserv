@@ -72,6 +72,14 @@ void Client::setRecveCheck(bool state){
     _recve_check = state;
 }
 
+void Client::setCgiPipe(int pipe){
+    _pipe = pipe;
+}
+
+void Client::setCgiPid(int pid){
+    _pid = pid;
+}
+
 // Adds received data in buffer
 void Client::appendRawData(const char* data, size_t len){
     _rawRequestBuffer.append(data, len);

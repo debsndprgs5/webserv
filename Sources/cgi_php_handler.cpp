@@ -1,9 +1,3 @@
-
-
-// Using ternaries to prevent making 2 functions for almost the same result, supporting
-// either POST and GET for php
-// 0 = GET 1 = POST
-
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -130,7 +124,7 @@ std::string getCurrentWorkingDirectory() {
 }
 
 
-int pipexec(char **arg, char **envp, int *ret, int fdtemp) 
+int pipexec(char **arg, char **envp, int *ret, int fdtemp, pid_t &childPid) 
 {
 	pid_t pid = fork();
 	
@@ -141,7 +135,7 @@ int pipexec(char **arg, char **envp, int *ret, int fdtemp)
 	}
 	else if (pid == 0)
 	{
-		// Child Process
+		// Child process
 		if (dup2(fdtemp, STDOUT_FILENO) < 0)
 		{
 			perror("dup2 STDOUT");
@@ -158,23 +152,13 @@ int pipexec(char **arg, char **envp, int *ret, int fdtemp)
 	}
 	else
 	{
-		// Parent Process
-		int status;
-		if (waitpid(pid, &status, 0) < 0)
-		{
-			*ret = -1;
-			return 0;
-		}
-		else
-		{
-			if (WIFEXITED(status))
-				*ret = WEXITSTATUS(status);
-			else
-				*ret = -1;
-		}
+		// Parent process
+		childPid = pid; // set the return parameter childPid to monitor it later
+		*ret = 0;       // CGI started, still active
 		return 1;
 	}
 }
+
 
 bool check_extention_php(const char *scriptname)
 {
@@ -184,7 +168,7 @@ bool check_extention_php(const char *scriptname)
 	return false;
 }
 
-void cgi_php_handler(int *ret, const char *scriptname, std::string *querystring, bool reqtype, const char *path, int fdtemp, std::string uri)
+void Methods::cgi_php_handler(int *ret, const char *scriptname, std::string *querystring, bool reqtype, const char *path, int fdtemp, std::string uri)
 {
 	std::vector<std::string> 	vec;
 	std::ostringstream 			script_filename, request_method, content_type, content_length, redirect_status, query_string, path_info, request_uri;
@@ -244,8 +228,12 @@ void cgi_php_handler(int *ret, const char *scriptname, std::string *querystring,
 	}
 	envp_arr[vec.size()] = NULL;
 	
-	if (!pipexec((char **)arg, envp_arr, ret, fdtemp))
+	pid_t childPid;
+	if (!pipexec((char **)arg, envp_arr, ret, fdtemp, childPid))
 		std::cout << "!!!!!!!!!!! SOMETHING WENT WRONG WITH PIPEX !!!!!!!!!!!" << std::endl;
+
+	// Here, we stock childPid in Client to check it in poll main loop
+	_client->setCgiPid(childPid);
 	
 	for (size_t i = 0; i < vec.size(); ++i)
 	{
@@ -255,30 +243,29 @@ void cgi_php_handler(int *ret, const char *scriptname, std::string *querystring,
 }
 
 
-// Use a pipe to start the CGI and get output as a string
-std::string runCgiAndGetOutput(const char *scriptname, std::string &queryString, bool reqType, const char *path, int *ret, std::string uri)
-{
-	// Create a pipe : pipefd[0] read, pipefd[1] write
+// Function to start handling CGI in a asynchrone way
+void Methods::startCgiAsync() {
+
 	int pipefd[2];
-	if (pipe(pipefd) < 0)
-	{
+	if (pipe(pipefd) < 0) {
 		perror("pipe");
-		return "";
+		fillError("500");
+		return;
 	}
-	//Call CGI function with write pipe
-	cgi_php_handler(ret, scriptname, &queryString, reqType, path, pipefd[1], uri);
+	// Start the CGI using pipefd[1] for writing
+	cgi_php_handler(&_ret, _cgiName.c_str(), &_cgiArg, reqType, _cgiPath.c_str(), pipefd[1], _parsedRequest.uri);
 	close(pipefd[1]);
 
-	//Read from the pipe
-	std::string output;
-	char buffer[1024];
-	ssize_t bytesRead;
-	while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer) - 1)) > 0)
-	{
-		buffer[bytesRead] = '\0';
-		output.append(buffer);
-	}
-	close(pipefd[0]);
+	// Put the pipe in non-blocking way
+	int flags = fcntl(pipefd[0], F_GETFL, 0);
+	fcntl(pipefd[0], F_SETFL, flags | O_NONBLOCK);
+
+	// Stock CGI's PID and fd in the client
+	_client->setCgiPipe(pipefd[0]);
 	
-	return output;
+	struct pollfd cgiFd;
+	cgiFd.fd = pipefd[0];
+	cgiFd.events = POLLIN;
+	_fdArray.push_back(cgiFd);
 }
+
