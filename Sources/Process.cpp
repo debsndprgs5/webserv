@@ -30,7 +30,7 @@ void Process::acceptNewClient(struct pollfd &it, std::vector<struct pollfd> &pen
 		Client *current = new Client(SocketClient, server);
 		struct pollfd fds;
 		fds.fd= current->getSocketClient();
-		fds.events = POLLIN;
+		fds.events = POLLIN ;
 		pendingClients.push_back(fds);
 		if(_MappedClient.find(current->getSocketClient()) == _MappedClient.end()){
 			_MappedClient[fds.fd] = current;
@@ -63,6 +63,7 @@ void Process::handleData(struct pollfd &it, std::vector<struct pollfd> &pendingD
         pendingDeco.push_back(tmp);
     }
 	else if(bytesRecv == 0){
+		Log("Recve = 0");
 		Client* client = _MappedClient[it.fd];
 		if(client->getRecveCheck() == false)
 			client->setRecveCheck(true);
@@ -172,12 +173,31 @@ void Process::mainLoop(){
 						handleData(*it, pendingDeco);
 				}
 			}
+			else if (it->revents & (POLLERR | POLLHUP | POLLNVAL)) {
+  			  Log("Erreur ou déconnexion détectée sur la socket");
+  			  pendingDeco.push_back(*it);
+  			  continue;
+			}
 		}
-		for(std::vector<struct pollfd>::iterator it= pendingDeco.begin(); it != pendingDeco.end(); it++){
-			close(it->fd);
-			delete _MappedClient[it->fd];
-			_MappedClient.erase(it->fd);
-		}
+		for(std::vector<struct pollfd>::iterator it= pendingDeco.begin(); it != pendingDeco.end(); it++) {
+    close(it->fd);
+    
+    // Détruire le client s’il existe dans la map
+    std::map<int, Client*>::iterator found = _MappedClient.find(it->fd);
+    if (found != _MappedClient.end()) {
+        delete found->second;  // delete l'instance
+        _MappedClient.erase(found);
+    }
+
+    // Ensuite, retirer ce FD de _fdArray
+    for (std::vector<struct pollfd>::iterator fdIt = _fdArray.begin(); fdIt != _fdArray.end(); ++fdIt) {
+        if (fdIt->fd == it->fd) {
+            _fdArray.erase(fdIt);
+            break;
+        }
+    }
+
+    	}
 	_fdArray.insert(_fdArray.end(), pendingClients.begin(), pendingClients.end());
 	pendingClients.clear();
 	pendingDeco.clear();
