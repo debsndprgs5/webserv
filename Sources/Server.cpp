@@ -54,6 +54,9 @@ void Server::setConfig(ServerConfig Conf){
 	setupLocations(Conf._location);
 	if(!_client_max_body_size)
 		_client_max_body_size = 2359297;
+	_default_dir_redirect = Conf._default_dir_redirect;
+	if(_default_dir_redirect.empty())
+		_default_dir_redirect="index.html";
 }
 
 
@@ -173,6 +176,10 @@ unsigned int Server::getSocketLen()const{
 	return _socketLen;
 }
 
+std::string Server::getDirRedict()const{
+	return _default_dir_redirect;
+}
+
 void Server::printServ(){
 	Log("----------------Printing server-------------");
 	Log("SERVER NAME " + _name);
@@ -180,10 +187,4 @@ void Server::printServ(){
 	Log("Ports : ");
 	for (std::vector<int>::iterator it = _ports.begin(); it != _ports.end(); it ++)
 		std::cout << *it << std::endl;
-	Log("TEST WITH LOCATIONS, any vector should be the same tough");
-	for(std::vector<LocationConfig>::iterator it = _locations.begin(); it != _locations.end(); it ++){
-		std::cout << it->_location_match <<std::endl;
-		for(std::vector<LocationConfig>::iterator nested = it->_nested_locations.begin(); nested != it->_nested_locations.end(); nested++)
-			std::cout << "		" << nested->_location_match << std::endl;
-	}
 }

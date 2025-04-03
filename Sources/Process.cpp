@@ -100,6 +100,7 @@ int Process::sendCheck(int fd, const char* data, size_t dataLength, size_t bytes
     }
     int ret_send = send(fd, data + bytesSent, dataLength - bytesSent, 0);
     if (ret_send < 0) {
+		Log("SEND RET IS -1");
         Client* client = _MappedClient[fd];
 		client->setBytesSend(bytesSent);
 		client->setLeftover(std::string (data+bytesSent, dataLength - bytesSent));
@@ -120,7 +121,7 @@ void Process::proccessData(Client *client, int fd, std::vector<struct pollfd>& p
     HttpRequest parsedRequest;
     std::string response;
     bool isGood = parseHttpRequest(client->getRequest(), parsedRequest);
-    Methods *met = new Methods(client, parsedRequest);
+    Methods *met = new Methods(client, parsedRequest, _fdArray);
     if (isGood == true) {
         response = met->getResponse();
     } else {
@@ -130,7 +131,7 @@ void Process::proccessData(Client *client, int fd, std::vector<struct pollfd>& p
     // Send the response in chunks using sendCheck
     int isSent = sendCheck(fd, response.c_str(), response.length());
     if (isSent == 0) {
-        Log("Failed to send data to client");
+        Log("SEND returns is 0");
         struct pollfd tmp;
         tmp.fd = fd;
         pendingDeco.push_back(tmp); // Mark client for disconnection
@@ -174,29 +175,26 @@ void Process::mainLoop(){
 				}
 			}
 			else if (it->revents & (POLLERR | POLLHUP | POLLNVAL)) {
-  			  Log("Erreur ou déconnexion détectée sur la socket");
+  			  Log("Deconexion or error on socket");
   			  pendingDeco.push_back(*it);
   			  continue;
 			}
 		}
 		for(std::vector<struct pollfd>::iterator it= pendingDeco.begin(); it != pendingDeco.end(); it++) {
-    close(it->fd);
-    
-    // Détruire le client s’il existe dans la map
-    std::map<int, Client*>::iterator found = _MappedClient.find(it->fd);
-    if (found != _MappedClient.end()) {
-        delete found->second;  // delete l'instance
-        _MappedClient.erase(found);
-    }
-
-    // Ensuite, retirer ce FD de _fdArray
-    for (std::vector<struct pollfd>::iterator fdIt = _fdArray.begin(); fdIt != _fdArray.end(); ++fdIt) {
-        if (fdIt->fd == it->fd) {
-            _fdArray.erase(fdIt);
-            break;
-        }
-    }
-
+    		close(it->fd);
+    		// Détruire le client s’il existe dans la map
+    		std::map<int, Client*>::iterator found = _MappedClient.find(it->fd);
+    		if (found != _MappedClient.end()) {
+       			delete found->second;  // delete l'instance
+        		_MappedClient.erase(found);
+    		}
+    		// Ensuite, retirer ce FD de _fdArray
+    		for (std::vector<struct pollfd>::iterator fdIt = _fdArray.begin(); fdIt != _fdArray.end(); ++fdIt) {
+        		if (fdIt->fd == it->fd) {
+            	_fdArray.erase(fdIt);
+            	break;
+        		}
+    		}
     	}
 	_fdArray.insert(_fdArray.end(), pendingClients.begin(), pendingClients.end());
 	pendingClients.clear();

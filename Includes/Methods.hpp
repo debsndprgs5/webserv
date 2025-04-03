@@ -8,6 +8,7 @@
 #include <ctime>
 #include <cstdlib>
 #include <unistd.h>
+#include <poll.h>
 #include <sys/stat.h>
 
 class Client;
@@ -30,9 +31,11 @@ class Methods{
 	std::string _root;
 	std::vector<std::string> _methods;
 	std::string _php_cgi_path;
+	    
 
     public:
-    Methods(Client *client, HttpRequest parsedRequest);
+	std::vector <struct pollfd> &_fdArray;
+    Methods(Client *client, HttpRequest parsedRequest, std::vector<struct pollfd> &fdArray);
     ~Methods();
     std::string parsedUri(int trigger);
     std::string &getResponse();

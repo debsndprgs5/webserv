@@ -30,6 +30,7 @@ class Server{
 		std::string const &getIp()const;
 		std::string const &getRoot()const;
 		std::string const &getphpCgi()const;
+		std::string getDirRedict()const;
 		bool getSendfile()const;
 		int getBodySize()const;
 		unsigned int getSocketLen()const;
@@ -47,6 +48,7 @@ class Server{
 		std::string _root;
 		int			_client_max_body_size;
 		std::string _php_cgi_path;
+		std::string _default_dir_redirect;
 		bool		_sendfile;
 		struct sockaddr_in _socketAddress;
 		unsigned int 	_socketLen;

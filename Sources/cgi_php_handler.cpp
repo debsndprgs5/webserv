@@ -73,10 +73,10 @@ void Methods::cgiHandler(){
 	}
 	if(isMethodAllowed(_methods, _parsedRequest.method) == true){
 		if(_parsedRequest.method == "GET"){
-			_content = runCgiAndGetOutput( _cgiName.c_str(), _cgiArg, 0, _cgiPath.c_str(), &_ret, _parsedRequest.uri);
+			_content = runCgiAndGetOutput( _cgiName.c_str(), _cgiArg, 0, _cgiPath.c_str(), &_ret, _parsedRequest.uri, _fdArray);
 		}
 		if(_parsedRequest.method == "POST"){			
-			_content = runCgiAndGetOutput(_cgiName.c_str(), _parsedRequest.body, 0, _cgiPath.c_str(), &_ret, _parsedRequest.uri);
+			_content = runCgiAndGetOutput(_cgiName.c_str(), _parsedRequest.body, 0, _cgiPath.c_str(), &_ret, _parsedRequest.uri, _fdArray);
 		}
 		setResponse();
 	}
@@ -109,7 +109,6 @@ bool Methods::checkPhpCgi() {
 			return false;
 	}
 	std::string type = _parsedRequest.headers["Content-Type"];
-		return false;
 	if(type == "application/x-www-form-urlencoded")
 		return true;
 	return false;
@@ -243,8 +242,10 @@ void Methods::cgi_php_handler(int *ret, const char *scriptname, std::string *que
 	delete[] envp_arr;
 }
 
+
 // Function to start handling CGI in a asynchrone way
 void Methods::startCgiAsync() {
+
 	int pipefd[2];
 	if (pipe(pipefd) < 0) {
 		perror("pipe");

@@ -94,11 +94,12 @@ void Client::clearRawData(){
 // 1. Headers should finish by "\r\n\r\n".
 // 2. If a "Content-Length" is present, we should have received header + 4 + Content-length bytes
 bool Client::requestIsComplete() const
-{
+{	
+	//std::string method = parseHttpRequest(_rawRequestBuffer).method;
     size_t headerEnd = _rawRequestBuffer.find("\r\n\r\n");
-    if (headerEnd == std::string::npos)
+    if (headerEnd == std::string::npos){
         return false; // Incomplete headers
-
+	}
     // Extract headers
     std::string headers = _rawRequestBuffer.substr(0, headerEnd);
     size_t contentLength = 0;
