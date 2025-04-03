@@ -72,13 +72,14 @@ void Methods::cgiHandler(){
 		return;
 	}
 	if(isMethodAllowed(_methods, _parsedRequest.method) == true){
-		if(_parsedRequest.method == "GET"){
-			_content = runCgiAndGetOutput( _cgiName.c_str(), _cgiArg, 0, _cgiPath.c_str(), &_ret, _parsedRequest.uri, _fdArray);
+		if(_parsedRequest.method == "GET")
+		{
+			startCgiAsync(0);
 		}
-		if(_parsedRequest.method == "POST"){			
-			_content = runCgiAndGetOutput(_cgiName.c_str(), _parsedRequest.body, 0, _cgiPath.c_str(), &_ret, _parsedRequest.uri, _fdArray);
+		if(_parsedRequest.method == "POST")
+		{			
+			startCgiAsync(1);
 		}
-		setResponse();
 	}
 	else
 		fillError("405");
@@ -180,11 +181,13 @@ void Methods::cgi_php_handler(int *ret, const char *scriptname, std::string *que
 	{
 		arg[0] = "/usr/bin/php-cgi";
 		script_filename << "SCRIPT_FILENAME=" << path << scriptname;
+		std::cout << "FILE NAME :" << path << scriptname << std::endl;
 		vec.push_back(script_filename.str());
 	}
 	else
 	{
 		script_filename << getCurrentWorkingDirectory() << "/" << path << scriptname;
+		std::cout << "Script_filename :" << script_filename.str() << std::endl;
 		vec.push_back(script_filename.str());
 		commandPath = script_filename.str();
 		arg[0] = commandPath.c_str();
@@ -212,7 +215,7 @@ void Methods::cgi_php_handler(int *ret, const char *scriptname, std::string *que
 	path_info << "PATH_INFO=" << uri;
 	vec.push_back(path_info.str());
 
-	vec.push_back("SCRIPT_NAME=/ubuntu_cgi_tester");
+	vec.push_back("SCRIPT_NAME=" + (std::string)scriptname);
 
 	request_uri << "REQUEST_URI=" << uri;
 	vec.push_back(request_uri.str());
@@ -227,7 +230,8 @@ void Methods::cgi_php_handler(int *ret, const char *scriptname, std::string *que
 		std::strcpy(envp_arr[i], vec[i].c_str());
 	}
 	envp_arr[vec.size()] = NULL;
-	
+	std::cout << "ARG 0 :" << arg[0] << std::endl;
+	//std::cout << "ARG 1 :" << arg[1] << std::endl;
 	pid_t childPid;
 	if (!pipexec((char **)arg, envp_arr, ret, fdtemp, childPid))
 		std::cout << "!!!!!!!!!!! SOMETHING WENT WRONG WITH PIPEX !!!!!!!!!!!" << std::endl;
@@ -244,7 +248,7 @@ void Methods::cgi_php_handler(int *ret, const char *scriptname, std::string *que
 
 
 // Function to start handling CGI in a asynchrone way
-void Methods::startCgiAsync() {
+void Methods::startCgiAsync(int reqtype) {
 
 	int pipefd[2];
 	if (pipe(pipefd) < 0) {
@@ -253,9 +257,9 @@ void Methods::startCgiAsync() {
 		return;
 	}
 	// Start the CGI using pipefd[1] for writing
-	cgi_php_handler(&_ret, _cgiName.c_str(), &_cgiArg, reqType, _cgiPath.c_str(), pipefd[1], _parsedRequest.uri);
+	cgi_php_handler(&_ret, _cgiName.c_str(), &_cgiArg, reqtype, _cgiPath.c_str(), pipefd[1], _parsedRequest.uri);
 	close(pipefd[1]);
-	client->setRet(_ret);
+	_client->setRet(_ret);
 	// Put the pipe in non-blocking way
 	int flags = fcntl(pipefd[0], F_GETFL, 0);
 	fcntl(pipefd[0], F_SETFL, flags | O_NONBLOCK);

@@ -1,7 +1,6 @@
 #include "../Includes/Client.hpp"
 #include "../Includes/Server.hpp"
 #include "../Includes/ParsingDataStructs.hpp" // Pour parseHttpRequest, etc.
-#include "HTTP_response_maker.cpp"
 #include <unistd.h>
 #include <cstdlib>
 #include <cstring>
@@ -36,6 +35,14 @@ int Client::getSocketClient(){
 	return _ClientSocket;
 }
 
+int Client::getCgiPid(){
+	return _pid;
+}
+
+int Client::getCgiPipe() const {
+	return _pipe;
+}
+
 // Returns full request buffer
 std::string &Client::getRequest(){
 	return _rawRequestBuffer;
@@ -57,18 +64,20 @@ std::string Client::getLeftover(){
 	return _leftoverSend;
 }
 
-std::string Client::getCgiOutput(){
-	std::string		output;
-	char			buffer[1024];
-	ssize_t			bytesRead;
+void Client::appendCgiOutput(const char *data) {
+	_cgiOutput.append(data);
+}
 
-	while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer) - 1)) > 0)
-	{
-		buffer[bytesRead] = '\0';
-		output.append(buffer);
-	}
-	close(pipefd[0]);
-	return output;
+void Client::appendCgiOutput(const std::string &data) {
+	_cgiOutput.append(data);
+}
+
+std::string Client::getCgiOutput() const {
+	return _cgiOutput;
+}
+
+void Client::clearCgiOutput() {
+	_cgiOutput.clear();
 }
 
 void Client::setRet(int ret){
@@ -140,6 +149,6 @@ bool Client::requestIsComplete() const
 
 std::string Client::getResponse(std::string content){
 
-	std::string response = buildHttpResponse(body, _ret, "", _server->getName(), "application/php");
+	std::string response = buildHttpResponse(content, _ret, "OK", _server->getName(), "application/php");
 	return response;
 }

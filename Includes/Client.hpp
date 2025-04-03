@@ -19,6 +19,8 @@ private:
 	int				_pipe;
 	int				_fd;
 	int				_ret;
+	int				_pid;
+	std::string		_cgiOutput;
 
 public:
 	Server* _server; 
@@ -34,6 +36,8 @@ public:
 	int getSocketClient();
 	bool getRecveCheck();
 	bool getSendTrigger();
+	int getCgiPid();
+	int getCgiPipe() const;
 	size_t getBytesSend();
 	std::string getLeftover();
 	void setBytesSend(size_t bytes);
@@ -43,8 +47,10 @@ public:
 	void setCgiPipe(int pipe);
 	void setCgiPid(int fd);
 	void setRet(int ret);
-	std::string getCgiOutput();
-
+	void appendCgiOutput(const char *data);
+	void appendCgiOutput(const std::string &data);
+	std::string getCgiOutput() const;
+	void clearCgiOutput();
 	// Méthodes de gestion du buffer
 	void appendRawData(const char* data, size_t len);
 	bool requestIsComplete() const;

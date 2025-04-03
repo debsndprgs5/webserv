@@ -14,32 +14,35 @@ Process::~Process(){
 	freeProcess();
 }
 
-//Accept a socket for new client and says hi to it
 void Process::acceptNewClient(struct pollfd &it, std::vector<struct pollfd> &pendingClients, Server *server){
-		int SocketClient = accept(it.fd, NULL, NULL);
-		if (SocketClient < 0){
-			close(SocketClient);
-			Log("Error accepting connection");
-			return ;
-		}
-		if (fcntl(SocketClient, F_SETFL, O_NONBLOCK) < 0){
-			close(SocketClient);
-			Log("Error setting non-blocking mode");
-			return;
-		}		
-		Client *current = new Client(SocketClient, server);
-		struct pollfd fds;
-		fds.fd= current->getSocketClient();
-		fds.events = POLLIN ;
-		pendingClients.push_back(fds);
-		if(_MappedClient.find(current->getSocketClient()) == _MappedClient.end()){
-			_MappedClient[fds.fd] = current;
-		}
-		if(_MappedServ.find(it.fd) != _MappedServ.end()){
-			std::string ServName= _MappedServ[it.fd]->getName();
-			Log(ServName + " : New connection detected...");
-		}
-}	
+    int SocketClient = accept(it.fd, NULL, NULL);
+    if (SocketClient < 0){
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            return;
+        }
+        Log("Error accepting connection: " + std::string(strerror(errno)));
+        return;
+    }
+    if (fcntl(SocketClient, F_SETFL, O_NONBLOCK) < 0){
+        close(SocketClient);
+        Log("Error setting non-blocking mode");
+        return;
+    }
+    
+    Client *current = new Client(SocketClient, server);
+    struct pollfd fds;
+    fds.fd = current->getSocketClient();
+    fds.events = POLLIN;
+    pendingClients.push_back(fds);
+    
+    if(_MappedClient.find(current->getSocketClient()) == _MappedClient.end()){
+        _MappedClient[fds.fd] = current;
+    }
+    if(_MappedServ.find(it.fd) != _MappedServ.end()){
+        std::string ServName = _MappedServ[it.fd]->getName();
+        Log(ServName + " : New connection detected...");
+    }
+}
 
 bool Process::isPendingDeco(struct pollfd &current, std::vector<struct pollfd> &pendingDeco){
  for (std::vector<struct pollfd>::const_iterator it = pendingDeco.begin(); it != pendingDeco.end(); ++it) {
@@ -131,7 +134,6 @@ void Process::proccessData(Client *client, int fd, std::vector<struct pollfd>& p
     // Send the response in chunks using sendCheck
     int isSent = sendCheck(fd, response.c_str(), response.length());
     if (isSent == 0) {
-        Log("SEND returns is 0");
         struct pollfd tmp;
         tmp.fd = fd;
         pendingDeco.push_back(tmp); // Mark client for disconnection
@@ -139,96 +141,112 @@ void Process::proccessData(Client *client, int fd, std::vector<struct pollfd>& p
     delete met;
 }
 
-//Call poll on _FdArray, if POLLIN is recived : new connection, 
-void Process::mainLoop(){
-	run = true;
-	signal(SIGINT, sigHandler);//Allow exit with ctrlC
-	std::vector<struct pollfd> pendingClients;//Tracks of the new clients for outside loop
-	std::vector<struct pollfd> pendingDeco;//fd_array that need to be remove outside loop
-	while(run == true){
-		int resPoll = poll(_fdArray.data(), _fdArray.size(), 10);
-		if(resPoll < 0){
-			freeProcess();
-			if(run == true)
-				ExitWithMessage(1,"poll is doing his best....");
-		}
-		for (std::vector<struct pollfd>::iterator it = _fdArray.begin(); it != _fdArray.end(); ++it) {
-			if (it->revents & POLLIN) {
-				std::map<int, Server*>::iterator itServ = _MappedServ.find(it->fd);
-				if (itServ != _MappedServ.end()) {
-					acceptNewClient(*it, pendingClients, itServ->second);
-				}
-				else if (_MappedClient.find(it->fd) != _MappedClient.end() && !isPendingDeco(*it, pendingDeco))
-				{
-					Client* cur = _MappedClient[it->fd];
-					if(cur->getSendTrigger() == true){
-						std::string leftover = cur->getLeftover();
-						int success = sendCheck(it->fd, leftover.c_str(), leftover.length(), cur->getBytesSend());
-						if(!success){
-							struct pollfd tmp;
-            				tmp.fd = it->fd;
-            				pendingDeco.push_back(tmp);
-        				}
-					}
-					else
-						handleData(*it, pendingDeco);
-				}
-				int clientFd = isCgiPipe(it->fd);
-				else if (clientFd > 0) { // Vérifie que ce fd correspond à un pipe CGI
-    				
-					Client* client = _MappedClient[clientFd];
-					char buffer[1024];
-    				ssize_t bytesRead = read(fd, buffer, sizeof(buffer) - 1);
-    				if (bytesRead > 0) {
-        				buffer[bytesRead] = '\0';
-        				client->appendCgiOutput(buffer);
-    				}
-					else if (bytesRead == 0) {
-        				// Le pipe est fermé, donc le CGI a terminé
-        				// Vérifier via waitpid(WNOHANG) le statut du CGI et finaliser la réponse
-        				int status;
-        				waitpid(client->getCgiPid(), &status, WNOHANG);
-        				// Construire la réponse complète avec l'output accumulé
-						std::string response = client->getResponse(client->getCgiOutput());
-						 // Send the response in chunks using sendCheck
-						int isSent = sendCheck(fd, response.c_str(), response.length());
-						if (isSent == 0) {
-							Log("SEND returns is 0");
-							struct pollfd tmp;
-							tmp.fd = fd;
-							pendingDeco.push_back(tmp); // Mark client for disconnection
-						}
-        				else// Retirer ce fd de _fdArray et fermer la connexion CGI si besoin
-							pendingDeco.push_back(fd);
-    				}
-				}
-			}
-			else if (it->revents & (POLLERR | POLLHUP | POLLNVAL)) {
-  			  Log("Deconexion or error on socket");
-  			  pendingDeco.push_back(*it);
-  			  continue;
-			}
-		}
-		for(std::vector<struct pollfd>::iterator it= pendingDeco.begin(); it != pendingDeco.end(); it++) {
-    		close(it->fd);
-    		// Détruire le client s’il existe dans la map
-    		std::map<int, Client*>::iterator found = _MappedClient.find(it->fd);
-    		if (found != _MappedClient.end()) {
-       			delete found->second;  // delete l'instance
-        		_MappedClient.erase(found);
-    		}
-    		// Ensuite, retirer ce FD de _fdArray
-    		for (std::vector<struct pollfd>::iterator fdIt = _fdArray.begin(); fdIt != _fdArray.end(); ++fdIt) {
-        		if (fdIt->fd == it->fd) {
-            	_fdArray.erase(fdIt);
-            	break;
-        		}
-    		}
-    	}
-	_fdArray.insert(_fdArray.end(), pendingClients.begin(), pendingClients.end());
-	pendingClients.clear();
-	pendingDeco.clear();
-	}
+void Process::mainLoop() {
+    run = true;
+    signal(SIGINT, sigHandler); // Allow to quit with CTRL+C
+
+    std::vector<struct pollfd> pendingClients; // Nouveaux clients à ajouter
+    std::vector<struct pollfd> pendingDeco;    // FDs à déconnecter
+
+    while (run) {
+        int resPoll = poll(_fdArray.data(), _fdArray.size(), 10);
+        if (resPoll < 0) {
+            freeProcess();
+            if (run)
+                ExitWithMessage(1, "poll encountered an error");
+        }
+
+        // Parcours de chaque fd surveillé
+        for (std::vector<struct pollfd>::iterator it = _fdArray.begin(); it != _fdArray.end(); ++it) {
+            // D'abord, on traite les erreurs ou déconnexions
+            if (it->revents & (POLLERR | POLLHUP | POLLNVAL)) {
+                Log("Erreur ou déconnexion sur le fd");
+                pendingDeco.push_back(*it);
+                continue;
+            }
+            int clientFd = isCgiPipe(it->fd);
+            // Si ce fd correspond à un pipe CGI, le traiter en exclusivité
+            if (clientFd) {
+                // Récupérer le client associé à ce pipe CGI
+                Client* client = _MappedClient[clientFd];
+                if (client) {
+                    Log("CLIENT FOUND WITH CGI STUFF");
+                    char buffer[1024];
+                    ssize_t bytesRead = read(it->fd, buffer, sizeof(buffer) - 1);
+                    std::cout << "BUFFER :" << buffer << std::endl; 
+                    if (bytesRead > 0) {
+                        buffer[bytesRead] = '\0';
+                        client->appendCgiOutput(buffer);
+                    }
+                    else if (bytesRead == 0) {
+                        // Le pipe est fermé : le CGI est terminé
+                        int status;
+                        waitpid(client->getCgiPid(), &status, WNOHANG); // Vérification non bloquante
+                        // On construit la réponse à partir de l'output accumulé
+                        std::string response = client->getResponse(client->getCgiOutput());
+                        Log("RESPONSE OF CGI :" + response);
+                        // Envoie de la réponse sur la socket client
+                        int sendStatus = sendCheck(client->getSocketClient(), response.c_str(), response.length(), 0);
+                        if (sendStatus == 0) {
+                            Log("Échec de l'envoi de la réponse CGI");
+                            struct pollfd tmp;
+                            tmp.fd = client->getSocketClient();
+                            pendingDeco.push_back(tmp);
+                        }
+                        // On marque le pipe CGI pour déconnexion (il sera retiré de _fdArray)
+                        pendingDeco.push_back(*it);
+                    }
+                    // On passe au fd suivant pour éviter de le traiter comme socket client
+                    continue;
+                }
+            }
+
+            // Sinon, traiter le fd comme une socket classique
+            // Cas d'une socket serveur qui accepte de nouvelles connexions
+            if (_MappedServ.find(it->fd) != _MappedServ.end()) {
+                acceptNewClient(*it, pendingClients, _MappedServ[it->fd]);
+            }
+            // Cas d'une socket client (non CGI)
+            else if (_MappedClient.find(it->fd) != _MappedClient.end() && !isPendingDeco(*it, pendingDeco)) {
+                Client* cur = _MappedClient[it->fd];
+                if (cur->getSendTrigger() == true) {
+                    std::string leftover = cur->getLeftover();
+                    int success = sendCheck(it->fd, leftover.c_str(), leftover.length(), cur->getBytesSend());
+                    if (!success) {
+                        struct pollfd tmp;
+                        tmp.fd = it->fd;
+                        pendingDeco.push_back(tmp);
+                    }
+                }
+                else {
+                    handleData(*it, pendingDeco);
+                }
+            }
+        } // Fin du for sur _fdArray
+
+        // Gestion des déconnexions
+        for (std::vector<struct pollfd>::iterator it = pendingDeco.begin(); it != pendingDeco.end(); ++it) {
+            close(it->fd);
+            // Supprimer le client associé
+            std::map<int, Client*>::iterator found = _MappedClient.find(it->fd);
+            if (found != _MappedClient.end()) {
+                delete found->second;
+                _MappedClient.erase(found);
+            }
+            // Retirer ce fd de _fdArray
+            for (std::vector<struct pollfd>::iterator fdIt = _fdArray.begin(); fdIt != _fdArray.end(); ++fdIt) {
+                if (fdIt->fd == it->fd) {
+                    _fdArray.erase(fdIt);
+                    break;
+                }
+            }
+        }
+
+        // Ajout des nouveaux clients à _fdArray
+        _fdArray.insert(_fdArray.end(), pendingClients.begin(), pendingClients.end());
+        pendingClients.clear();
+        pendingDeco.clear();
+    }
 }
 
 
@@ -283,11 +301,11 @@ void Process::setRunning(){
 }
 
 //Returns client socket/fd 
-int Process::isCgiPipe(int fd){
-
-	for(std::map<int, *Client>::iterator it = _MappedClient.begin(); it != _MappedClient.end(); it ++){
-		if(it->second.getCgiPid() == fd)
-			return it->first;
-	}
-	return 0;
+int Process::isCgiPipe(int fd)
+{
+    for (std::map<int, Client*>::iterator it = _MappedClient.begin(); it != _MappedClient.end(); ++it) {
+        if (it->second->getCgiPipe() == fd)
+            return it->first;
+    }
+    return 0;
 }

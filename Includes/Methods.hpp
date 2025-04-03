@@ -46,12 +46,13 @@ class Methods{
     void myGet();
     void myPost();
     void myDelete();
-    void  fillError(std::string errorCode);
+    void fillError(std::string errorCode);
 	void handleRequest();
     void setResponse();
 	bool setCgiPath();
 	void setCgiName();
 	void setCgiArg();
+    void startCgiAsync(int reqtype);
 	void cgiHandler();
 	std::string extractFileName(const std::string& part);
 	void setConfig();
@@ -63,7 +64,6 @@ class Methods{
     void cgi_php_handler(int *ret, const char *scriptname, std::string *querystring, bool reqtype, const char *path, int fdtemp, std::string uri);
 
 };
-std::string runCgiAndGetOutput(const char *scriptname, std::string &queryString, bool reqType, const char *path, int *ret, std::string uri);
 std::string extractBoundary(const std::string& contentType);
 std::vector<std::string> splitBodyByBoundary(const std::string& body, const std::string& boundary);
 bool isFilePart(const std::string& part);
