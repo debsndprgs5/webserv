@@ -1,8 +1,6 @@
 
 # siege 
 
-# hostname 
-
 # default file 
 
 # Works with nc 

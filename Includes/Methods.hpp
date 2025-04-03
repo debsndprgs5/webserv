@@ -57,6 +57,7 @@ class Methods{
     std::string findWhat();
     std::string findType(std::string uri);
 	LocationConfig *findConfig(std::string path, std::vector<LocationConfig> &locations);
+    void Methods::cgi_php_handler(int *ret, const char *scriptname, std::string *querystring, bool reqtype, const char *path, int fdtemp, std::string uri);
 
 };
 std::string runCgiAndGetOutput(const char *scriptname, std::string &queryString, bool reqType, const char *path, int *ret, std::string uri);
@@ -65,4 +66,3 @@ std::vector<std::string> splitBodyByBoundary(const std::string& body, const std:
 bool isFilePart(const std::string& part);
 std::string extractFileName(const std::string& part);
 std::string extractFileContent(const std::string& part);
-
