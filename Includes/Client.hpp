@@ -18,6 +18,7 @@ private:
 	std::string		_rawRequestBuffer;
 	int				pipe;
 	int				fd;
+	int				_ret;
 
 public:
 	Server* _server; 
@@ -41,6 +42,8 @@ public:
 	void setSendTrigger(bool state);
 	void setCgiPipe(int pipe);
 	void setCgiPid(int fd);
+	void setRet(int ret);
+	std::string Client::getCgiOutput();
 
 	// Méthodes de gestion du buffer
 	void appendRawData(const char* data, size_t len);

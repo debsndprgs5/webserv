@@ -9,85 +9,103 @@
 Client::Client() : _ClientSocket(-1), _rawRequestBuffer("") {}
 
 Client::Client(int socket, Server *server)
-    : _ClientSocket(socket), _server(server), _rawRequestBuffer(""), _recve_check(false) , _sendTrigger(false){
+	: _ClientSocket(socket), _server(server), _rawRequestBuffer(""), _recve_check(false) , _sendTrigger(false){
 }
 
 Client::~Client(){
-    close(_ClientSocket);
+	close(_ClientSocket);
 }
 
 Client &Client::operator=(const Client &cpy){
-    if (this != &cpy) {
-        _server = cpy._server;
-        _ClientSocket = cpy._ClientSocket;
-        _rawRequestBuffer = cpy._rawRequestBuffer;
-    }
-    return *this;
+	if (this != &cpy) {
+		_server = cpy._server;
+		_ClientSocket = cpy._ClientSocket;
+		_rawRequestBuffer = cpy._rawRequestBuffer;
+	}
+	return *this;
 }
 
 // Set for socket and associated server
 void Client::setSocketClient(int socket, Server *server){
-    _ClientSocket = socket;
-    _server = server;
+	_ClientSocket = socket;
+	_server = server;
 }
 
 // Get the client socket
 int Client::getSocketClient(){
-    return _ClientSocket;
+	return _ClientSocket;
 }
 
 // Returns full request buffer
 std::string &Client::getRequest(){
-    return _rawRequestBuffer;
+	return _rawRequestBuffer;
 }
 
 bool Client::getRecveCheck(){
-    return _recve_check;
+	return _recve_check;
 }
 
 bool Client::getSendTrigger(){
-    return _sendTrigger;
+	return _sendTrigger;
 }
 
 size_t Client::getBytesSend(){
-    return _bytesSend;
+	return _bytesSend;
 }
 
 std::string Client::getLeftover(){
-    return _leftoverSend;
+	return _leftoverSend;
+}
+
+std::string Client::getCgiOutput(){
+	std::string		output;
+	char			buffer[1024];
+	ssize_t			bytesRead;
+
+	while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer) - 1)) > 0)
+	{
+		buffer[bytesRead] = '\0';
+		output.append(buffer);
+	}
+	close(pipefd[0]);
+	return output;
+}
+
+void Client::setRet(int ret){
+	_ret = ret;
 }
 
 void Client::setBytesSend(size_t bytes){
-    _bytesSend = bytes;
+	_bytesSend = bytes;
 }
 void Client::setLeftover(std::string leftover){
-    _leftoverSend = leftover;
+	_leftoverSend = leftover;
 }
 
 void Client::setSendTrigger(bool state){
-    _sendTrigger = state;
+	_sendTrigger = state;
 }
 
 void Client::setRecveCheck(bool state){
-    _recve_check = state;
+	_recve_check = state;
 }
 
 void Client::setCgiPipe(int pipe){
-    _pipe = pipe;
+	_pipe = pipe;
 }
 
 void Client::setCgiPid(int pid){
-    _pid = pid;
+	_pid = pid;
 }
 
 // Adds received data in buffer
 void Client::appendRawData(const char* data, size_t len){
-    _rawRequestBuffer.append(data, len);
+	_rawRequestBuffer.append(data, len);
 }
 
 // Clear the buffer after processing
 void Client::clearRawData(){
-    _rawRequestBuffer.clear();
+	_rawRequestBuffer.clear();
 }
 
 
@@ -97,27 +115,27 @@ void Client::clearRawData(){
 bool Client::requestIsComplete() const
 {	
 	//std::string method = parseHttpRequest(_rawRequestBuffer).method;
-    size_t headerEnd = _rawRequestBuffer.find("\r\n\r\n");
-    if (headerEnd == std::string::npos){
-        return false; // Incomplete headers
+	size_t headerEnd = _rawRequestBuffer.find("\r\n\r\n");
+	if (headerEnd == std::string::npos){
+		return false; // Incomplete headers
 	}
-    // Extract headers
-    std::string headers = _rawRequestBuffer.substr(0, headerEnd);
-    size_t contentLength = 0;
-    size_t clPos = headers.find("Content-Length:");
-    if (clPos != std::string::npos) {
-        // Find the first number after "Content-Length:"
-        size_t start = headers.find_first_of("0123456789", clPos);
-        if (start != std::string::npos) {
-            contentLength = std::atoi(headers.c_str() + start);
-        }
-    }
-    // If Content-Length is defined, the complete buffer should at least have headerEnd + 4 + contentLenght bytes
-    if (contentLength > 0)
-        return (_rawRequestBuffer.size() >= headerEnd + 4 + contentLength);
+	// Extract headers
+	std::string headers = _rawRequestBuffer.substr(0, headerEnd);
+	size_t contentLength = 0;
+	size_t clPos = headers.find("Content-Length:");
+	if (clPos != std::string::npos) {
+		// Find the first number after "Content-Length:"
+		size_t start = headers.find_first_of("0123456789", clPos);
+		if (start != std::string::npos) {
+			contentLength = std::atoi(headers.c_str() + start);
+		}
+	}
+	// If Content-Length is defined, the complete buffer should at least have headerEnd + 4 + contentLenght bytes
+	if (contentLength > 0)
+		return (_rawRequestBuffer.size() >= headerEnd + 4 + contentLength);
 
-    // For requests without body like GET, headers alone are fine.
-    return true;
+	// For requests without body like GET, headers alone are fine.
+	return true;
 }
 
 std::string Client::getResponse(std::string content){
