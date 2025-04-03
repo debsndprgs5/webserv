@@ -79,10 +79,10 @@ void Methods::cgiHandler(){
 	}
 	if(isMethodAllowed(_methods, _parsedRequest.method) == true){
 		if(_parsedRequest.method == "GET"){
-			_content = runCgiAndGetOutput( _cgiName.c_str(), _cgiArg, 0, _cgiPath.c_str(), &_ret, _parsedRequest.uri);
+			_content = runCgiAndGetOutput( _cgiName.c_str(), _cgiArg, 0, _cgiPath.c_str(), &_ret, _parsedRequest.uri, _fdArray);
 		}
 		if(_parsedRequest.method == "POST"){			
-			_content = runCgiAndGetOutput(_cgiName.c_str(), _parsedRequest.body, 0, _cgiPath.c_str(), &_ret, _parsedRequest.uri);
+			_content = runCgiAndGetOutput(_cgiName.c_str(), _parsedRequest.body, 0, _cgiPath.c_str(), &_ret, _parsedRequest.uri, _fdArray);
 		}
 		setResponse();
 	}
@@ -115,7 +115,6 @@ bool Methods::checkPhpCgi() {
 			return false;
 	}
 	std::string type = _parsedRequest.headers["Content-Type"];
-		return false;
 	if(type == "application/x-www-form-urlencoded")
 		return true;
 	return false;
@@ -259,8 +258,6 @@ void cgi_php_handler(int *ret, const char *scriptname, std::string *querystring,
 // Use a pipe to start the CGI and get output as a string
 std::string runCgiAndGetOutput(const char *scriptname, std::string &queryString, bool reqType, const char *path, int *ret, std::string uri)
 {
-	Log("FILENAME :");
-	std::cout << scriptname << std::endl;
 	// Create a pipe : pipefd[0] read, pipefd[1] write
 	int pipefd[2];
 	if (pipe(pipefd) < 0)

@@ -55,7 +55,7 @@ void Methods::fillError(std::string error_code){
     else {
         _content = "<html><body><h1>Error " + error_code + "</h1><p>An error occurred.</p></body></html>";
         _ret = std::atoi(error_code.c_str()); // Set the HTTP response code
-        Log("Unknow ERROR CODE, shoudln't happend code = " + error_code);
+        Log("Unknow ERROR CODE : " + error_code);
         return;
     }
     std::ifstream errorFile(errorPagePath.c_str());

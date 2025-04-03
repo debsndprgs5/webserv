@@ -4,7 +4,7 @@
 
 //setup client and default errors, do the method asked by client
 //doMethod changes the variable ->response(the full message send back to internet)
-Methods::Methods(Client *client, HttpRequest parsedRequest){
+Methods::Methods(Client *client, HttpRequest parsedRequest, std::vector<struct pollfd> &fdArray): _fdArray(fdArray){
     _client = client;
     _parsedRequest = parsedRequest;
 
@@ -36,8 +36,8 @@ Methods::Methods(Client *client, HttpRequest parsedRequest){
 		}
 		size_t lastSlash = _parsedRequest.uri.find_last_of('/');
 		if(lastSlash == _parsedRequest.uri.size()-1){
-			if(_parsedRequest.method == "GET")
-				_parsedRequest.uri += "index.html";
+			if(_parsedRequest.method != "POST")
+				_parsedRequest.uri += _client->_server->getDirRedict();
 		}
     	handleRequest();
 		doMethod();
@@ -163,7 +163,6 @@ bool isHtml(std::string path){
 	size_t LastDot = path.find_last_of('.');
 	if(LastDot != std::string::npos){
 		std::string ext = path.substr(LastDot);
-		Log("EXT :" + ext);
 		if(ext == ".html")
 			return true;
 	}
