@@ -173,6 +173,35 @@ void Process::mainLoop(){
 					else
 						handleData(*it, pendingDeco);
 				}
+				int clientFd = isCgiPipe(it->fd);
+				else if (clientFd > 0) { // Vérifie que ce fd correspond à un pipe CGI
+    				
+					Client* client = _MappedClient[clientFd];
+					char buffer[1024];
+    				ssize_t bytesRead = read(fd, buffer, sizeof(buffer) - 1);
+    				if (bytesRead > 0) {
+        				buffer[bytesRead] = '\0';
+        				client->appendCgiOutput(buffer);
+    				}
+					else if (bytesRead == 0) {
+        				// Le pipe est fermé, donc le CGI a terminé
+        				// Vérifier via waitpid(WNOHANG) le statut du CGI et finaliser la réponse
+        				int status;
+        				waitpid(client->getCgiPid(), &status, WNOHANG);
+        				// Construire la réponse complète avec l'output accumulé
+						std::string response = client->getResponse(client->getCgiOutput());
+						 // Send the response in chunks using sendCheck
+						int isSent = sendCheck(fd, response.c_str(), response.length());
+						if (isSent == 0) {
+							Log("SEND returns is 0");
+							struct pollfd tmp;
+							tmp.fd = fd;
+							pendingDeco.push_back(tmp); // Mark client for disconnection
+						}
+        				else// Retirer ce fd de _fdArray et fermer la connexion CGI si besoin
+							pendingDeco.push_back(fd);
+    				}
+				}
 			}
 			else if (it->revents & (POLLERR | POLLHUP | POLLNVAL)) {
   			  Log("Deconexion or error on socket");
@@ -251,4 +280,14 @@ void Process::freeProcess() {
 void Process::setRunning(){
 	run = false;
 	freeProcess();
+}
+
+//Returns client socket/fd 
+int Process::isCgiPipe(int fd){
+
+	for(std::map<int, *Client>::iterator it = _MappedClient.begin(); it != _MappedClient.end(); it ++){
+		if(it->second.getCgiPid() == fd)
+			return it->first;
+	}
+	return 0;
 }

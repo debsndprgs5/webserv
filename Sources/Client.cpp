@@ -1,6 +1,7 @@
 #include "../Includes/Client.hpp"
 #include "../Includes/Server.hpp"
 #include "../Includes/ParsingDataStructs.hpp" // Pour parseHttpRequest, etc.
+#include "HTTP_response_maker.cpp"
 #include <unistd.h>
 #include <cstdlib>
 #include <cstring>
@@ -109,4 +110,10 @@ bool Client::requestIsComplete() const
 
     // For requests without body like GET, headers alone are fine.
     return true;
+}
+
+std::string Client::getResponse(std::string body, int code, std::string statusMessage){
+
+	std::string response = buildHttpResponse(body, code, statusMessage, _server->getName(), "application/php");
+	return response;
 }
