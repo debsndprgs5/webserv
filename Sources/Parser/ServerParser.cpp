@@ -58,6 +58,10 @@ void setServerPhpCgiPath(ServerConfig &server, const std::vector<std::string>& p
         server._php_cgi_path = parts[1];
 }
 
+void setServerDefaultDirRedirect(ServerConfig &server, const std::vector<std::string>& parts) {
+  if (parts.size() >= 2)
+    server._default_dir_redirect = parts[1];
+}
 
 // ------------------------------------------------------------------
 // Parsing Server blocks
@@ -78,6 +82,8 @@ ServerConfig parseServer(std::ifstream &in)
     serverDirectives["client_max_body_size"] = setServerClientMaxBodySize;
     serverDirectives["sendfile"] = setServerSendfile;
     serverDirectives["php_cgi_path"] = setServerPhpCgiPath;
+    serverDirectives["default_dir_redirect"] = setServerDefaultDirRedirect;
+
 
     std::string line;
     bool closingFound = false;
