@@ -215,8 +215,6 @@ void Methods::cgi_php_handler(int *ret, const char *scriptname, std::string *que
 	path_info << "PATH_INFO=" << uri;
 	vec.push_back(path_info.str());
 
-	vec.push_back("SCRIPT_NAME=" + (std::string)scriptname);
-
 	request_uri << "REQUEST_URI=" << uri;
 	vec.push_back(request_uri.str());
 

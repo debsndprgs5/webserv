@@ -160,7 +160,7 @@ void Process::mainLoop() {
         for (std::vector<struct pollfd>::iterator it = _fdArray.begin(); it != _fdArray.end(); ++it) {
             // D'abord, on traite les erreurs ou déconnexions
             if (it->revents & (POLLERR | POLLHUP | POLLNVAL)) {
-                Log("Erreur ou déconnexion sur le fd");
+                Log("Client or pipe disconnected");
                 pendingDeco.push_back(*it);
                 continue;
             }
@@ -172,7 +172,9 @@ void Process::mainLoop() {
                 if (client) {
                     Log("CLIENT FOUND WITH CGI STUFF");
                     char buffer[1024];
-                    ssize_t bytesRead = read(it->fd, buffer, sizeof(buffer) - 1);
+					std::cout << "IT FD :" << it->fd << std::endl;
+					std::cout << "CLIENT PIPE"  <<client->getCgiPipe() <<std::endl;
+                    ssize_t bytesRead = read(client->getCgiPipe(), buffer, sizeof(buffer) - 1);
                     std::cout << "BUFFER :" << buffer << std::endl; 
                     if (bytesRead > 0) {
                         buffer[bytesRead] = '\0';
