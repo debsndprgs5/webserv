@@ -12,7 +12,11 @@ Client::Client(int socket, Server *server)
 }
 
 Client::~Client(){
+	Log("DISCONECTED CLIENT :");
+	std::cout << _ClientSocket << " With pipe " << _pipe << std::endl;
+	close(_pipe);
 	close(_ClientSocket);
+
 }
 
 Client &Client::operator=(const Client &cpy){
@@ -150,5 +154,6 @@ bool Client::requestIsComplete() const
 std::string Client::getResponse(std::string content){
 
 	std::string response = buildHttpResponse(content, _ret, "OK", _server->getName(), "application/php");
+	Log("RESPONSE FROM CLIENT :" + response);
 	return response;
 }

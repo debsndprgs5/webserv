@@ -228,8 +228,6 @@ void Methods::cgi_php_handler(int *ret, const char *scriptname, std::string *que
 		std::strcpy(envp_arr[i], vec[i].c_str());
 	}
 	envp_arr[vec.size()] = NULL;
-	std::cout << "ARG 0 :" << arg[0] << std::endl;
-	//std::cout << "ARG 1 :" << arg[1] << std::endl;
 	pid_t childPid;
 	if (!pipexec((char **)arg, envp_arr, ret, fdtemp, childPid))
 		std::cout << "!!!!!!!!!!! SOMETHING WENT WRONG WITH PIPEX !!!!!!!!!!!" << std::endl;
@@ -255,6 +253,7 @@ void Methods::startCgiAsync(int reqtype) {
 		return;
 	}
 	// Start the CGI using pipefd[1] for writing
+	std::cout << "CGI ARG :" << _cgiArg << std::endl;
 	cgi_php_handler(&_ret, _cgiName.c_str(), &_cgiArg, reqtype, _cgiPath.c_str(), pipefd[1], _parsedRequest.uri);
 	close(pipefd[1]);
 	_client->setRet(_ret);

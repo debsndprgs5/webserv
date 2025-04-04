@@ -55,6 +55,8 @@ bool Process::isPendingDeco(struct pollfd &current, std::vector<struct pollfd> &
 
 void Process::handleData(struct pollfd &it, std::vector<struct pollfd> &pendingDeco) 
 {
+	if(_MappedClient[it.fd]->getCgiPipe() > 0)
+		return;
 	char buffer[1024] = {0};
 	int bytesRecv = recv(it.fd, buffer, sizeof(buffer), 0);
 
@@ -95,6 +97,8 @@ void Process::handleData(struct pollfd &it, std::vector<struct pollfd> &pendingD
 }
 
 int Process::sendCheck(int fd, const char* data, size_t dataLength, size_t bytesSent) {
+   
+   Log("Probleme ici ?");
     if (bytesSent >= dataLength) {
         // All data has been sent
 		Client* client = _MappedClient[fd];
@@ -125,9 +129,17 @@ void Process::proccessData(Client *client, int fd, std::vector<struct pollfd>& p
     std::string response;
     bool isGood = parseHttpRequest(client->getRequest(), parsedRequest);
     Methods *met = new Methods(client, parsedRequest, _fdArray);
-    if (isGood == true) {
+	std::cout << "YOU DON'T SEE ME ? HERE's THE CATCh" << std::endl;
+	if(client->getCgiPipe() > 0){
+		Log("Pipe found");
+		delete met;
+		return;
+	}
+    else if (isGood == true) {
         response = met->getResponse();
-    } else {
+    }
+	
+	else {
         met->fillError("404"); // Parsing error?
         response = met->getResponse();
     }
@@ -159,8 +171,10 @@ void Process::mainLoop() {
         // Parcours de chaque fd surveillé
         for (std::vector<struct pollfd>::iterator it = _fdArray.begin(); it != _fdArray.end(); ++it) {
             // D'abord, on traite les erreurs ou déconnexions
-            if (it->revents & (POLLERR | POLLHUP | POLLNVAL)) {
+            if (it->revents & (POLLERR | POLLHUP )) {
+				perror("PERROR :");
                 Log("Client or pipe disconnected");
+				//std::cout << "FD DISCONNECTED : " << it->fd << std::endl;
                 pendingDeco.push_back(*it);
                 continue;
             }
@@ -171,16 +185,21 @@ void Process::mainLoop() {
                 Client* client = _MappedClient[clientFd];
                 if (client) {
                     Log("CLIENT FOUND WITH CGI STUFF");
+					std::cout << "CLIENT FD :" << client->getSocketClient() << std::endl;
                     char buffer[1024];
 					std::cout << "IT FD :" << it->fd << std::endl;
 					std::cout << "CLIENT PIPE"  <<client->getCgiPipe() <<std::endl;
-                    ssize_t bytesRead = read(client->getCgiPipe(), buffer, sizeof(buffer) - 1);
-                    std::cout << "BUFFER :" << buffer << std::endl; 
+                    ssize_t bytesRead = read(client->getCgiPipe(), buffer, sizeof(buffer) - 1);   
+					std::cout << "BYTES READ :" << bytesRead << std::endl;
+					Log("BUFFER :" + (std::string)buffer);
                     if (bytesRead > 0) {
+						
+						std::cout << "BUFFER :" << buffer << std::endl; 
                         buffer[bytesRead] = '\0';
                         client->appendCgiOutput(buffer);
+						bytesRead=0;
                     }
-                    else if (bytesRead == 0) {
+                    if (bytesRead == 0) {
                         // Le pipe est fermé : le CGI est terminé
                         int status;
                         waitpid(client->getCgiPid(), &status, WNOHANG); // Vérification non bloquante
@@ -195,8 +214,9 @@ void Process::mainLoop() {
                             tmp.fd = client->getSocketClient();
                             pendingDeco.push_back(tmp);
                         }
+						Log("WTF YOU SEE ME ??");
                         // On marque le pipe CGI pour déconnexion (il sera retiré de _fdArray)
-                        pendingDeco.push_back(*it);
+                       pendingDeco.push_back(*it);
                     }
                     // On passe au fd suivant pour éviter de le traiter comme socket client
                     continue;
@@ -228,7 +248,9 @@ void Process::mainLoop() {
 
         // Gestion des déconnexions
         for (std::vector<struct pollfd>::iterator it = pendingDeco.begin(); it != pendingDeco.end(); ++it) {
-            close(it->fd);
+            Log("CLOSING FDS");
+			std::cout << it->fd << std::endl;
+			close(it->fd);
             // Supprimer le client associé
             std::map<int, Client*>::iterator found = _MappedClient.find(it->fd);
             if (found != _MappedClient.end()) {
