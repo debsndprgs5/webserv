@@ -52,7 +52,7 @@ class Methods{
 	bool setCgiPath();
 	void setCgiName();
 	void setCgiArg();
-    void startCgiAsync(int reqtype);
+    void startCgiAsync(int reqtype, std::string cgiArg);
 	void cgiHandler();
 	std::string extractFileName(const std::string& part);
 	void setConfig();

@@ -74,11 +74,11 @@ void Methods::cgiHandler(){
 	if(isMethodAllowed(_methods, _parsedRequest.method) == true){
 		if(_parsedRequest.method == "GET")
 		{
-			startCgiAsync(0);
+			startCgiAsync(0, _cgiArg);
 		}
 		if(_parsedRequest.method == "POST")
-		{			
-			startCgiAsync(1);
+		{
+			startCgiAsync(1, _parsedRequest.body);
 		}
 	}
 	else
@@ -244,7 +244,7 @@ void Methods::cgi_php_handler(int *ret, const char *scriptname, std::string *que
 
 
 // Function to start handling CGI in a asynchrone way
-void Methods::startCgiAsync(int reqtype) {
+void Methods::startCgiAsync(int reqtype, std::string cgiArg) {
 
 	int pipefd[2];
 	if (pipe(pipefd) < 0) {
@@ -254,7 +254,7 @@ void Methods::startCgiAsync(int reqtype) {
 	}
 	// Start the CGI using pipefd[1] for writing
 	std::cout << "CGI ARG :" << _cgiArg << std::endl;
-	cgi_php_handler(&_ret, _cgiName.c_str(), &_cgiArg, reqtype, _cgiPath.c_str(), pipefd[1], _parsedRequest.uri);
+	cgi_php_handler(&_ret, _cgiName.c_str(), &cgiArg, reqtype, _cgiPath.c_str(), pipefd[1], _parsedRequest.uri);
 	close(pipefd[1]);
 	_client->setRet(_ret);
 	// Put the pipe in non-blocking way

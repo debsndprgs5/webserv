@@ -14,6 +14,29 @@ Process::~Process(){
 	freeProcess();
 }
 
+
+int drainCgiPipe(Client* client)
+{
+    char buffer[1024];
+    ssize_t bytesRead = 0;
+    while (true) {
+        bytesRead = read(client->getCgiPipe(), buffer, sizeof(buffer));
+        if (bytesRead > 0) {
+            // On ajoute les données lues au buffer
+            client->appendCgiOutput(std::string(buffer, bytesRead));
+            // Si on a lu moins que la taille du buffer, on considère qu'il n'y a plus de données pour l'instant.
+            if (bytesRead < (ssize_t)sizeof(buffer)) {
+                return(bytesRead);
+            }
+        }
+        else {
+            // bytesRead <= 0 : soit il n'y a plus de données, soit une erreur
+            return(bytesRead);
+        }
+    }
+}
+
+
 void Process::acceptNewClient(struct pollfd &it, std::vector<struct pollfd> &pendingClients, Server *server){
     int SocketClient = accept(it.fd, NULL, NULL);
     if (SocketClient < 0){
@@ -186,17 +209,12 @@ void Process::mainLoop() {
                 if (client) {
                     Log("CLIENT FOUND WITH CGI STUFF");
 					std::cout << "CLIENT FD :" << client->getSocketClient() << std::endl;
-                    char buffer[1024];
 					std::cout << "IT FD :" << it->fd << std::endl;
 					std::cout << "CLIENT PIPE"  <<client->getCgiPipe() <<std::endl;
-                    ssize_t bytesRead = read(client->getCgiPipe(), buffer, sizeof(buffer) - 1);   
+					int bytesRead = drainCgiPipe(client);
 					std::cout << "BYTES READ :" << bytesRead << std::endl;
-					Log("BUFFER :" + (std::string)buffer);
                     if (bytesRead > 0) {
 						
-						std::cout << "BUFFER :" << buffer << std::endl; 
-                        buffer[bytesRead] = '\0';
-                        client->appendCgiOutput(buffer);
 						bytesRead=0;
                     }
                     if (bytesRead == 0) {
