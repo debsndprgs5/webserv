@@ -184,7 +184,7 @@ void Process::mainLoop() {
     std::vector<struct pollfd> pendingDeco;    // FDs à déconnecter
 
     while (run) {
-        int resPoll = poll(_fdArray.data(), _fdArray.size(), 10);
+        int resPoll = poll(_fdArray.data(), _fdArray.size(), 1);
         if (resPoll < 0) {
             freeProcess();
             if (run)
@@ -194,7 +194,7 @@ void Process::mainLoop() {
         // Parcours de chaque fd surveillé
         for (std::vector<struct pollfd>::iterator it = _fdArray.begin(); it != _fdArray.end(); ++it) {
             // D'abord, on traite les erreurs ou déconnexions
-            if (it->revents & (POLLERR | POLLHUP )) {
+            if (it->revents & ( POLLHUP )) {
 				perror("PERROR :");
                 Log("Client or pipe disconnected");
 				//std::cout << "FD DISCONNECTED : " << it->fd << std::endl;
@@ -213,11 +213,7 @@ void Process::mainLoop() {
 					std::cout << "CLIENT PIPE"  <<client->getCgiPipe() <<std::endl;
 					int bytesRead = drainCgiPipe(client);
 					std::cout << "BYTES READ :" << bytesRead << std::endl;
-                    if (bytesRead > 0) {
-						
-						bytesRead=0;
-                    }
-                    if (bytesRead == 0) {
+                    if (bytesRead >= 0) {
                         // Le pipe est fermé : le CGI est terminé
                         int status;
                         waitpid(client->getCgiPid(), &status, WNOHANG); // Vérification non bloquante

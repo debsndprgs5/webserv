@@ -125,40 +125,48 @@ std::string getCurrentWorkingDirectory() {
 }
 
 
-int pipexec(char **arg, char **envp, int *ret, int fdtemp, pid_t &childPid) 
+int pipexec(char **arg, char **envp, int *ret, int stdoutFd, int stdinFd, pid_t &childPid)
 {
-	pid_t pid = fork();
-	
-	if (pid < 0) 
-	{
-		*ret = -1;
-		return 0;
-	}
-	else if (pid == 0)
-	{
-		// Child process
-		if (dup2(fdtemp, STDOUT_FILENO) < 0)
-		{
-			perror("dup2 STDOUT");
-			exit(EXIT_FAILURE);
-		}
-		if (dup2(fdtemp, STDERR_FILENO) < 0)
-		{
-			perror("dup2 STDERR");
-			exit(EXIT_FAILURE);
-		}
-		execve(arg[0], arg, envp);
-		perror("execve");
-		exit(EXIT_FAILURE);
-	}
-	else
-	{
-		// Parent process
-		childPid = pid; // set the return parameter childPid to monitor it later
-		*ret = 0;       // CGI started, still active
-		return 1;
-	}
+    pid_t pid = fork();
+    if (pid < 0)
+    {
+        *ret = -1;
+        return 0;
+    }
+    else if (pid == 0)
+    {
+        // Child process
+        if (stdinFd != -1) {
+            if (dup2(stdinFd, STDIN_FILENO) < 0) {
+                perror("dup2 STDIN");
+                exit(EXIT_FAILURE);
+            }
+            // On peut fermer stdinFd après dup2
+            close(stdinFd);
+        }
+        if (dup2(stdoutFd, STDOUT_FILENO) < 0)
+        {
+            perror("dup2 STDOUT");
+            exit(EXIT_FAILURE);
+        }
+        if (dup2(stdoutFd, STDERR_FILENO) < 0)
+        {
+            perror("dup2 STDERR");
+            exit(EXIT_FAILURE);
+        }
+        execve(arg[0], arg, envp);
+        perror("execve");
+        exit(EXIT_FAILURE);
+    }
+    else
+    {
+        // Parent process
+        childPid = pid;
+        *ret = 0;
+        return 1;
+    }
 }
+
 
 
 bool check_extention_php(const char *scriptname)
@@ -169,104 +177,150 @@ bool check_extention_php(const char *scriptname)
 	return false;
 }
 
-void Methods::cgi_php_handler(int *ret, const char *scriptname, std::string *querystring, bool reqtype, const char *path, int fdtemp, std::string uri)
+void Methods::cgi_php_handler(int *ret, const char *scriptname, std::string *querystring, bool reqtype,
+                               const char *path, int stdoutFd, int stdinFd, std::string uri)
 {
-	std::vector<std::string> 	vec;
-	std::ostringstream 			script_filename, request_method, content_type, content_length, redirect_status, query_string, path_info, request_uri;
-	const char 					*arg[2];
-	std::string commandPath;
+    std::vector<std::string> vec;
+    std::ostringstream script_filename, request_method, content_type, content_length,
+                         redirect_status, query_string, path_info, request_uri;
+    const char *arg[2];
+    std::string commandPath;
+    arg[0] = NULL;
+    if (check_extention_php(scriptname))
+    {
+        arg[0] = "/usr/bin/php-cgi";
+        script_filename << "SCRIPT_FILENAME=" << path << scriptname;
+        std::cout << "FILE NAME :" << path << scriptname << std::endl;
+        vec.push_back(script_filename.str());
+    }
+    else
+    {
+        script_filename << getCurrentWorkingDirectory() << "/" << path << scriptname;
+        std::cout << "Script_filename :" << script_filename.str() << std::endl;
+        vec.push_back(script_filename.str());
+        commandPath = script_filename.str();
+        arg[0] = commandPath.c_str();
+    }
+    arg[1] = NULL;
 
-	arg[0] = NULL;
-	if (check_extention_php(scriptname))
-	{
-		arg[0] = "/usr/bin/php-cgi";
-		script_filename << "SCRIPT_FILENAME=" << path << scriptname;
-		std::cout << "FILE NAME :" << path << scriptname << std::endl;
-		vec.push_back(script_filename.str());
-	}
-	else
-	{
-		script_filename << getCurrentWorkingDirectory() << "/" << path << scriptname;
-		std::cout << "Script_filename :" << script_filename.str() << std::endl;
-		vec.push_back(script_filename.str());
-		commandPath = script_filename.str();
-		arg[0] = commandPath.c_str();
-	}
-	arg[1] = NULL;
+    // 0 = GET, 1 = POST
+    const char *meth = (!reqtype) ? "GET" : "POST";
+    request_method << "REQUEST_METHOD=" << meth;
+    vec.push_back(request_method.str());
+    if (reqtype)
+    {
+        content_type << "CONTENT_TYPE=application/x-www-form-urlencoded";
+        vec.push_back(content_type.str());
+    }
 
-	// 0 = GET, 1 = POST
-	const char *method = (!reqtype) ? "GET" : "POST";
-	request_method << "REQUEST_METHOD=" << method;
-	vec.push_back(request_method.str());
-	if (reqtype)
-	{
-		content_type << "CONTENT_TYPE=application/x-www-form-urlencoded";
-		vec.push_back(content_type.str());
-	}
+    content_length << "CONTENT_LENGTH=" << querystring->size();
+    vec.push_back(content_length.str());
 
-	content_length << "CONTENT_LENGTH=" << (reqtype ? querystring->size() : 0);
-	vec.push_back(content_length.str());
+    vec.push_back("SERVER_PROTOCOL=HTTP/1.1");
 
-	vec.push_back("SERVER_PROTOCOL=HTTP/1.1");
+    redirect_status << "REDIRECT_STATUS=200";
+    vec.push_back(redirect_status.str());
 
-	redirect_status << "REDIRECT_STATUS=200";
-	vec.push_back(redirect_status.str());
+    path_info << "PATH_INFO=" << uri;
+    vec.push_back(path_info.str());
 
-	path_info << "PATH_INFO=" << uri;
-	vec.push_back(path_info.str());
+    request_uri << "REQUEST_URI=" << uri;
+    vec.push_back(request_uri.str());
 
-	request_uri << "REQUEST_URI=" << uri;
-	vec.push_back(request_uri.str());
+    query_string << "QUERY_STRING=" << *querystring;
+    vec.push_back(query_string.str());
 
-	query_string << "QUERY_STRING=" << *querystring;
-	vec.push_back(query_string.str());
+    char **envp_arr = new char*[vec.size() + 1];
+    for (size_t i = 0; i < vec.size(); ++i)
+    {
+        envp_arr[i] = new char[vec[i].size() + 1];
+        std::strcpy(envp_arr[i], vec[i].c_str());
+    }
+    envp_arr[vec.size()] = NULL;
+    std::cout << "ARG 0 :" << arg[0] << std::endl;
 
-	char **envp_arr = new char*[vec.size() + 1];
-	for (size_t i = 0; i < vec.size(); ++i)
-	{
-		envp_arr[i] = new char[vec[i].size() + 1];
-		std::strcpy(envp_arr[i], vec[i].c_str());
-	}
-	envp_arr[vec.size()] = NULL;
-	pid_t childPid;
-	if (!pipexec((char **)arg, envp_arr, ret, fdtemp, childPid))
-		std::cout << "!!!!!!!!!!! SOMETHING WENT WRONG WITH PIPEX !!!!!!!!!!!" << std::endl;
+    // On appelle pipexec en transmettant stdoutFd et aussi stdinFd
+    pid_t childPid;
+    if (!pipexec((char **)arg, envp_arr, ret, stdoutFd, stdinFd, childPid))
+        std::cout << "!!!!!!!!!!! SOMETHING WENT WRONG WITH PIPEX !!!!!!!!!!!" << std::endl;
 
-	// Here, we stock childPid in Client to check it in poll main loop
-	_client->setCgiPid(childPid);
-	
-	for (size_t i = 0; i < vec.size(); ++i)
-	{
-		delete[] envp_arr[i];
-	}
-	delete[] envp_arr;
+    // Stockage du childPid dans le client pour le suivi via poll
+    _client->setCgiPid(childPid);
+    
+    for (size_t i = 0; i < vec.size(); ++i)
+    {
+        delete[] envp_arr[i];
+    }
+    delete[] envp_arr;
 }
 
 
 // Function to start handling CGI in a asynchrone way
-void Methods::startCgiAsync(int reqtype, std::string cgiArg) {
+void Methods::startCgiAsync(int reqtype, std::string cgiArg)
+{
+    int stdoutPipe[2];
+    if (pipe(stdoutPipe) < 0) {
+        perror("pipe stdout");
+        fillError("500");
+        return;
+    }
+    
+    int stdinPipe[2];
+    if (reqtype == 1) { // POST
+        if (pipe(stdinPipe) < 0) {
+            perror("pipe stdin");
+            fillError("500");
+            return;
+        }
+    }
+    else {
+        // Pour GET, on ne redirige pas STDIN, on passera -1
+        stdinPipe[0] = -1;
+        stdinPipe[1] = -1;
+    }
 
-	int pipefd[2];
-	if (pipe(pipefd) < 0) {
-		perror("pipe");
-		fillError("500");
-		return;
-	}
-	// Start the CGI using pipefd[1] for writing
-	std::cout << "CGI ARG :" << _cgiArg << std::endl;
-	cgi_php_handler(&_ret, _cgiName.c_str(), &cgiArg, reqtype, _cgiPath.c_str(), pipefd[1], _parsedRequest.uri);
-	close(pipefd[1]);
-	_client->setRet(_ret);
-	// Put the pipe in non-blocking way
-	int flags = fcntl(pipefd[0], F_GETFL, 0);
-	fcntl(pipefd[0], F_SETFL, flags | O_NONBLOCK);
+    std::cout << "Pipe created: stdout read fd = " << stdoutPipe[0] << ", write fd = " << stdoutPipe[1] << std::endl;
+    if (reqtype == 1) {
+        std::cout << "Pipe created: stdin read fd = " << stdinPipe[0] << ", write fd = " << stdinPipe[1] << std::endl;
+    }
+    
+    // Appel de cgi_php_handler en transmettant stdoutPipe[1] et stdinPipe[0] (ou -1 pour GET)
+    cgi_php_handler(&_ret, _cgiName.c_str(), &cgiArg, reqtype, _cgiPath.c_str(),
+                    stdoutPipe[1], (reqtype == 1 ? stdinPipe[0] : -1), _parsedRequest.uri);
+    close(stdoutPipe[1]); // On ferme le côté écriture de stdout dans le parent
 
-	// Stock CGI's PID and fd in the client
-	_client->setCgiPipe(pipefd[0]);
-	
-	struct pollfd cgiFd;
-	cgiFd.fd = pipefd[0];
-	cgiFd.events = POLLIN;
-	_fdArray.push_back(cgiFd);
+    if (reqtype == 1) {
+        // Pour POST, écrire le contenu de cgiArg dans le pipe stdin
+        ssize_t totalWritten = 0, written = 0;
+        const char* inputData = cgiArg.c_str();
+        size_t inputLength = cgiArg.size();
+        while (totalWritten < inputLength) {
+            written = write(stdinPipe[1], inputData + totalWritten, inputLength - totalWritten);
+            if (written < 0) {
+                perror("write to stdinPipe");
+                break;
+            }
+            totalWritten += written;
+        }
+        close(stdinPipe[1]); // Fermer le côté écriture du pipe STDIN dans le parent
+    }
+    
+    _client->setRet(_ret);
+    
+    // Mettre stdoutPipe[0] en mode non bloquant
+    int flags = fcntl(stdoutPipe[0], F_GETFL, 0);
+    fcntl(stdoutPipe[0], F_SETFL, flags | O_NONBLOCK);
+    
+    // Stocker le fd du pipe CGI (stdoutPipe[0]) dans le client
+    _client->setCgiPipe(stdoutPipe[0]);
+    
+    // Ajouter le fd stdout du CGI à votre tableau de poll
+    struct pollfd cgiFd;
+    cgiFd.fd = stdoutPipe[0];
+    cgiFd.events = POLLIN;
+    _fdArray.push_back(cgiFd);
+    
+    std::cout << "PIPE FD in startCgiAsync = " << stdoutPipe[0] << std::endl;
 }
+
 
