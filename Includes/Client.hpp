@@ -23,7 +23,8 @@ private:
 	std::string		_cgiOutput;
 
 public:
-	Server* _server; 
+	Server* _server;
+	bool 			cgiHasFinished;
 
 	Client();
 	Client(int socket, Server *server);

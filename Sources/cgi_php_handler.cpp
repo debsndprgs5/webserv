@@ -35,7 +35,7 @@ bool Methods::setCgiPath(){
 	if(config != NULL){
 		setConfig(config);
 	}
-	else 
+	else
 		setConfig();
 	_cgiPath = _root;
 	if(!_pathWithAlias.empty()){
@@ -54,7 +54,7 @@ bool Methods::setCgiPath(){
 }
 
 void Methods::setCgiArg(){
-	
+
 	size_t trigger = _parsedRequest.uri.find_first_of('?');
 	if(trigger != std::string::npos){
 		_cgiArg = _parsedRequest.uri.substr(trigger+1);
@@ -246,7 +246,7 @@ void Methods::cgi_php_handler(int *ret, const char *scriptname, std::string *que
 
     // Stockage du childPid dans le client pour le suivi via poll
     _client->setCgiPid(childPid);
-    
+
     for (size_t i = 0; i < vec.size(); ++i)
     {
         delete[] envp_arr[i];
@@ -264,7 +264,7 @@ void Methods::startCgiAsync(int reqtype, std::string cgiArg)
         fillError("500");
         return;
     }
-    
+
     int stdinPipe[2];
     if (reqtype == 1) { // POST
         if (pipe(stdinPipe) < 0) {
@@ -283,7 +283,7 @@ void Methods::startCgiAsync(int reqtype, std::string cgiArg)
     if (reqtype == 1) {
         std::cout << "Pipe created: stdin read fd = " << stdinPipe[0] << ", write fd = " << stdinPipe[1] << std::endl;
     }
-    
+
     // Appel de cgi_php_handler en transmettant stdoutPipe[1] et stdinPipe[0] (ou -1 pour GET)
     cgi_php_handler(&_ret, _cgiName.c_str(), &cgiArg, reqtype, _cgiPath.c_str(),
                     stdoutPipe[1], (reqtype == 1 ? stdinPipe[0] : -1), _parsedRequest.uri);
@@ -304,23 +304,21 @@ void Methods::startCgiAsync(int reqtype, std::string cgiArg)
         }
         close(stdinPipe[1]); // Fermer le côté écriture du pipe STDIN dans le parent
     }
-    
-    _client->setRet(_ret);
-    
+
+    _client->setRet(200);
+
     // Mettre stdoutPipe[0] en mode non bloquant
     int flags = fcntl(stdoutPipe[0], F_GETFL, 0);
     fcntl(stdoutPipe[0], F_SETFL, flags | O_NONBLOCK);
-    
+
     // Stocker le fd du pipe CGI (stdoutPipe[0]) dans le client
     _client->setCgiPipe(stdoutPipe[0]);
-    
+
     // Ajouter le fd stdout du CGI à votre tableau de poll
     struct pollfd cgiFd;
     cgiFd.fd = stdoutPipe[0];
     cgiFd.events = POLLIN;
     _fdArray.push_back(cgiFd);
-    
+
     std::cout << "PIPE FD in startCgiAsync = " << stdoutPipe[0] << std::endl;
 }
-
-
