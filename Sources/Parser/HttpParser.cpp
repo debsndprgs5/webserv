@@ -10,6 +10,7 @@ void setHttpIndex(HttpConfig &http, const std::vector<std::string>& parts) {
 }
 
 void setHttpSendfile(HttpConfig &http, const std::vector<std::string>& parts) {
+    
     if (parts.size() >= 2)
         http._sendfile = parseBool(parts[1]);
 }

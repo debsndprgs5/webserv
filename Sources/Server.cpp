@@ -25,9 +25,7 @@ Server &Server::operator=(const Server &Conf){
 	_methods = Conf._methods;
 	_error_page = Conf._error_page;
 	_root = Conf._root;
-	_access_log = Conf._access_log;
 	_client_max_body_size = Conf._client_max_body_size;
-	_sendfile = Conf._sendfile;
 	_php_cgi_path = Conf._php_cgi_path;
 	_sockets = Conf._sockets;
 	_socketAddress = Conf._socketAddress;
@@ -37,15 +35,13 @@ Server &Server::operator=(const Server &Conf){
 }
 
 void Server::setConfig(ServerConfig Conf){
-	_name = *Conf._server_name.begin();
+	_name = Conf._server_name;
 	_ipAdrs = Conf._ipAdr;
 	_ports = Conf._listen;
 	_methods = Conf._methods;
 	_error_page = Conf._error_page;
 	_root = Conf._root;
-	_access_log = Conf._access_log;
 	_client_max_body_size = Conf._client_max_body_size;
-	_sendfile = Conf._sendfile;
 	_php_cgi_path = Conf._php_cgi_path;
 	memset(&_socketAddress, 0, sizeof(_socketAddress));
 	_socketLen = sizeof(struct sockaddr_in);
@@ -162,10 +158,6 @@ std::string const &Server::getRoot()const{
 
 std::string const &Server::getphpCgi()const{
 	return _php_cgi_path;
-}
-
-bool Server::getSendfile()const{
-	return _sendfile;
 }
 
 int Server::getBodySize()const{

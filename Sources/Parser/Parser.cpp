@@ -98,32 +98,32 @@ int main(int argc, char **argv)
         }
     }
 
-    // Output configuration for verification.
-    std::cout << "Number of servers found: " << servers.size() << "\n";
-    for (size_t i = 0; i < servers.size(); ++i) {
-        std::cout << "Server " << i + 1 << ":\n";
-        std::cout << "  server_name: ";
-        for (std::vector<std::string>::iterator it = servers[i]._server_name.begin(); it != servers[i]._server_name.end(); ++it)
-            std::cout << *it << " ";
-        std::cout << "\n";
-        std::cout << "  listen ports: ";
-        for (std::vector<int>::iterator it = servers[i]._listen.begin(); it != servers[i]._listen.end(); ++it)
-            std::cout << *it << " ";
-        std::cout << "  Ip address: " << " | " << servers[i]._ipAdr<< std::endl;
-        std::cout << "\n";
-        std::cout << "  root: " << servers[i]._root << "\n";
-        std::cout << "  client_max_body_size: " << servers[i]._client_max_body_size << "\n";
-        std::cout << "  Number of locations: " << servers[i]._location.size() << "\n";
-        printAllLocations(servers[i]._location);
-        std::cout << "\n";
-    }
+    // // Output configuration for verification.
+    // std::cout << "Number of servers found: " << servers.size() << "\n";
+    // for (size_t i = 0; i < servers.size(); ++i) {
+    //     std::cout << "Server " << i + 1 << ":\n";
+    //     std::cout << "  server_name: ";
+    //     for (std::vector<std::string>::iterator it = servers[i]._server_name.begin(); it != servers[i]._server_name.end(); ++it)
+    //         std::cout << *it << " ";
+    //     std::cout << "\n";
+    //     std::cout << "  listen ports: ";
+    //     for (std::vector<int>::iterator it = servers[i]._listen.begin(); it != servers[i]._listen.end(); ++it)
+    //         std::cout << *it << " ";
+    //     std::cout << "  Ip address: " << " | " << servers[i]._ipAdr<< std::endl;
+    //     std::cout << "\n";
+    //     std::cout << "  root: " << servers[i]._root << "\n";
+    //     std::cout << "  client_max_body_size: " << servers[i]._client_max_body_size << "\n";
+    //     std::cout << "  Number of locations: " << servers[i]._location.size() << "\n";
+    //     printAllLocations(servers[i]._location);
+    //     std::cout << "\n";
+    // }
 
-    std::cout << "HTTP Configuration:\n";
-    std::cout << "  index: ";
-    for (std::vector<std::string>::iterator it = httpConfig._index.begin(); it != httpConfig._index.end(); ++it)
-        std::cout << *it << " ";
-    std::cout << "\n";
-    std::cout << "  client_max_body_size: " << httpConfig._client_max_body_size << "\n";
+    // std::cout << "HTTP Configuration:\n";
+    // std::cout << "  index: ";
+    // for (std::vector<std::string>::iterator it = httpConfig._index.begin(); it != httpConfig._index.end(); ++it)
+    //     std::cout << *it << " ";
+    // std::cout << "\n";
+    // std::cout << "  client_max_body_size: " << httpConfig._client_max_body_size << "\n";
 
 
 	//Start of processing

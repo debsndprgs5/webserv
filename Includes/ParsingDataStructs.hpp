@@ -54,18 +54,16 @@ struct ServerConfig {
     std::string _ipAdr;
     std::string _default_dir_redirect;
     std::vector<int> _listen;
-    std::vector<std::string> _server_name;
-    std::vector<std::string> _access_log;
+    std::string _server_name;
     std::vector<LocationConfig> _location;
     std::vector<std::string> _methods;
     std::map<std::string, std::string> _error_page;
     std::vector<std::string> _index;
     std::string _root;
     int _client_max_body_size;
-    bool _sendfile;
     std::string _php_cgi_path;
 
-    ServerConfig() : _client_max_body_size(0), _sendfile(false) {}
+    ServerConfig() : _client_max_body_size(0) {}
 };
 
 struct HttpConfig {

@@ -207,28 +207,21 @@ void Process::mainLoop() {
                 // Récupérer le client associé à ce pipe CGI
                 Client* client = _MappedClient[clientFd];
                 if (client) {
-                    Log("CLIENT FOUND WITH CGI STUFF");
-					std::cout << "CLIENT FD :" << client->getSocketClient() << std::endl;
-					std::cout << "IT FD :" << it->fd << std::endl;
-					std::cout << "CLIENT PIPE"  <<client->getCgiPipe() <<std::endl;
+                    // Log("CLIENT FOUND WITH CGI STUFF");
 					int bytesRead = drainCgiPipe(client);
-					std::cout << "BYTES READ :" << bytesRead << std::endl;
                     if (bytesRead >= 0) {
                         // Le pipe est fermé : le CGI est terminé
                         int status;
                         waitpid(client->getCgiPid(), &status, WNOHANG); // Vérification non bloquante
                         // On construit la réponse à partir de l'output accumulé
                         std::string response = client->getResponse(client->getCgiOutput());
-                        Log("RESPONSE OF CGI :" + response);
                         // Envoie de la réponse sur la socket client
                         int sendStatus = sendCheck(client->getSocketClient(), response.c_str(), response.length(), 0);
                         if (sendStatus == 0) {
-                            Log("Échec de l'envoi de la réponse CGI");
                             struct pollfd tmp;
                             tmp.fd = client->getSocketClient();
                             pendingDeco.push_back(tmp);
                         }
-						Log("WTF YOU SEE ME ??");
                         // On marque le pipe CGI pour déconnexion (il sera retiré de _fdArray)
                        pendingDeco.push_back(*it);
                     }

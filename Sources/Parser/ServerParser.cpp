@@ -13,13 +13,8 @@ void setServerListen(ServerConfig &server, const std::vector<std::string>& parts
 }
 
 void setServerName(ServerConfig &server, const std::vector<std::string>& parts) {
-    for (size_t i = 1; i < parts.size(); ++i)
-        server._server_name.push_back(parts[i]);
-}
-
-void setServerAccessLog(ServerConfig &server, const std::vector<std::string>& parts) {
-    for (size_t i = 1; i < parts.size(); ++i)
-        server._access_log.push_back(parts[i]);
+    if (parts.size() >= 2)
+        server._server_name = parts[1];
 }
 
 void setServerErrorPage(ServerConfig &server, const std::vector<std::string>& parts) {
@@ -48,11 +43,6 @@ void setServerClientMaxBodySize(ServerConfig &server, const std::vector<std::str
 }
 
 
-void setServerSendfile(ServerConfig &server, const std::vector<std::string>& parts) {
-    if (parts.size() >= 2)
-        server._sendfile = parseBool(parts[1]);
-}
-
 void setServerPhpCgiPath(ServerConfig &server, const std::vector<std::string>& parts) {
     if (parts.size() >= 2)
         server._php_cgi_path = parts[1];
@@ -75,13 +65,11 @@ ServerConfig parseServer(std::ifstream &in)
     std::map<std::string, void (*)(ServerConfig&, const std::vector<std::string>&)> serverDirectives;
     serverDirectives["listen"] = setServerListen;
     serverDirectives["server_name"] = setServerName;
-    serverDirectives["access_log"] = setServerAccessLog;
     serverDirectives["error_page"] = setServerErrorPage;
     serverDirectives["allow_methods"] = setServerAllowMethods;
     serverDirectives["index"] = setServerIndex;
     serverDirectives["root"] = setServerRoot;
     serverDirectives["client_max_body_size"] = setServerClientMaxBodySize;
-    serverDirectives["sendfile"] = setServerSendfile;
     serverDirectives["php_cgi_path"] = setServerPhpCgiPath;
     serverDirectives["default_dir_redirect"] = setServerDefaultDirRedirect;
 

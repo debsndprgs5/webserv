@@ -41,7 +41,6 @@ class Server{
 		std::map<std::string, std::string> _error_page;
 		std::vector<int> _ports;
 		std::vector<int> _sockets;
-		std::vector<std::string> _access_log;
 	private : 
 		std::string _name;
 		std::string _ipAdrs;
@@ -49,7 +48,6 @@ class Server{
 		int			_client_max_body_size;
 		std::string _php_cgi_path;
 		std::string _default_dir_redirect;
-		bool		_sendfile;
 		struct sockaddr_in _socketAddress;
 		unsigned int 	_socketLen;
 
