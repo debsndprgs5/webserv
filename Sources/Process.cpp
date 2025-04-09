@@ -96,7 +96,6 @@ void Process::handleData(struct pollfd &it, std::vector<struct pollfd> &pendingD
 		pendingDeco.push_back(tmp);
 	}
 	else if(bytesRecv == 0){
-		Log("Recve = 0");
 		Client* client = _MappedClient[it.fd];
 		if(client->getRecveCheck() == false)
 			client->setRecveCheck(true);
@@ -125,7 +124,6 @@ void Process::handleData(struct pollfd &it, std::vector<struct pollfd> &pendingD
 
 int Process::sendCheck(int fd, const char* data, size_t dataLength, size_t bytesSent) {
 
-   Log("Probleme ici ?");
 	if (bytesSent >= dataLength) {
 		// All data has been sent
 		Client* client = _MappedClient[fd];
@@ -134,12 +132,10 @@ int Process::sendCheck(int fd, const char* data, size_t dataLength, size_t bytes
 	}
 	int ret_send = send(fd, data + bytesSent, dataLength - bytesSent, 0);
 	if (ret_send < 0) {
-		Log("SEND RET IS -1");
 		Client* client = _MappedClient[fd];
 		client->setBytesSend(bytesSent);
 		client->setLeftover(std::string (data+bytesSent, dataLength - bytesSent));
 		client->setSendTrigger(true);
-		Log("LATER RETRY CALLED");
 		return -1; // Retry later
 	} else if (ret_send == 0) {
 		// Connection lost
@@ -157,7 +153,6 @@ void Process::proccessData(Client *client, int fd, std::vector<struct pollfd>& p
 	bool isGood = parseHttpRequest(client->getRequest(), parsedRequest);
 	Methods *met = new Methods(client, parsedRequest, _pendingAdd);
 	if(client->getCgiPipe() > 0){
-		Log("Pipe found");
 		delete met;
 		return;
 	}
@@ -201,7 +196,7 @@ void Process::mainLoop() {
                 continue;
             }
 
-            // 2) Socket Serveur ?
+            // 2) Is Socket Server ?
             if (_MappedServ.find(it->fd) != _MappedServ.end()) {
                 if (it->revents & POLLIN) {
                     // accepter un nouveau client
@@ -210,12 +205,11 @@ void Process::mainLoop() {
                 continue;
             }
 
-            // 3) Socket Client normal ?
+            // 3)  Is Socket Client ?
             if (_MappedClient.find(it->fd) != _MappedClient.end()) {
                 Client* cur = _MappedClient[it->fd];
 
                 if (it->revents & POLLIN) {
-                    // Lire tout ce qui est dispo
                     bool clientClosed = false;
                     while (true) {
                         char buffer[1024];
@@ -228,17 +222,17 @@ void Process::mainLoop() {
                             break;
                         }
                         else { 
-                            // -1 => plus rien à lire maintenant
+                            // -1 => Nothing to read for now
                             break;
                         }
                     }
                     if (clientClosed) {
-                        // Déconnexion
+                        // Deconexion
                         struct pollfd tmp;
                         tmp.fd = it->fd;
                         pendingDeco.push_back(tmp);
                     } else {
-                        // Traiter la requête si complète
+                        // Handle Request if full
                         if (cur->requestIsComplete()) {
                             proccessData(cur, it->fd, pendingDeco);
                             cur->clearRawData();
@@ -246,53 +240,51 @@ void Process::mainLoop() {
                     }
                 }
 
-                // (Si besoin) if (it->revents & POLLOUT) { ... } pour l'envoi asynchrone
                 continue;
             }
 
-            // 4) Sinon, est-ce un pipe CGI ?
+            // 4) IS pipe CGI ?
             int clientFd = isCgiPipe(it->fd);
             if (clientFd) {
                 Client* client = _MappedClient[clientFd];
 
-                // Si c’est un pipe CGI, on veut lire en cas de POLLIN **ou** POLLHUP
-                // => S’il y a un HUP, on peut quand même avoir un dernier chunk à lire.
+                // If it's CGI, we read in case of POLLIN **or** POLLHUP
+                // =>if HUP, there can still be some leftover
                 if (it->revents & (POLLIN | POLLHUP)) {
-                    drainCgiPipe(client);  // lit tout ce qui est dispo
+                    drainCgiPipe(client);  // read all what's disponible
 
-                    // Si le CGI est terminé (read => 0)
+                    // if CGI est over (read => 0)
                     if (client->cgiHasFinished) {
-                        // Construire la réponse
+                        //Build Response
                         std::string response = client->getResponse(client->getCgiOutput());
                         int sendStatus = sendCheck(client->getSocketClient(),
                                                    response.c_str(),
                                                    response.size());
                         if (sendStatus == 0) {
-                            // le client HTTP est fermé
+                            // close client HTTP
                             struct pollfd tmp;
                             tmp.fd = client->getSocketClient();
                             pendingDeco.push_back(tmp);
                         }
-                        // Fermer le pipe
+                        // Close the pipe
                         pendingDeco.push_back(*it);
                     }
                 }
-                // Pas de "continue" nécessaire, on est déjà en fin de loop
             }
-        } // Fin du for poll
+        } // End of For(poll)
 
-        // Déconnexions
+        // Deconexion
         for (size_t i = 0; i < pendingDeco.size(); i++) {
             int closingFd = pendingDeco[i].fd;
             close(closingFd);
 
-            // Supprimer le client associé
+            // Erase linked client
             std::map<int, Client*>::iterator foundClient = _MappedClient.find(closingFd);
             if (foundClient != _MappedClient.end()) {
                 delete foundClient->second;
                 _MappedClient.erase(foundClient);
             }
-            // Retirer ce fd de _fdArray
+            // Remove fd from _fdArray
             for (std::vector<struct pollfd>::iterator fdIt = _fdArray.begin(); fdIt != _fdArray.end(); ++fdIt) {
                 if (fdIt->fd == closingFd) {
                     _fdArray.erase(fdIt);
@@ -305,7 +297,7 @@ void Process::mainLoop() {
 		    _fdArray.push_back(_pendingAdd[i]);
 		_pendingAdd.clear();
 
-        // Ajout des nouveaux clients
+        // Adding new clients
         for (size_t i = 0; i < pendingClients.size(); i++) {
             _fdArray.push_back(pendingClients[i]);
         }

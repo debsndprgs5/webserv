@@ -134,6 +134,7 @@ int Server::startServer(){
 		return(ReturnWithMessage(1, _name + ": No root define"));
 	if(_sockets.empty())
 		return(ReturnWithMessage(1, _name+": Failure not avaible ports"));
+	printServ();
 	return (ReturnWithMessage(0, _name+": Succes binding sockets to server"));
 }
 
@@ -173,7 +174,7 @@ std::string Server::getDirRedict()const{
 }
 
 void Server::printServ(){
-	Log("----------------Printing server-------------");
+	Log("-----------------------------");
 	Log("SERVER NAME " + _name);
 	Log("IP ADRS : " + _ipAdrs);
 	Log("Ports : ");

@@ -42,7 +42,6 @@ bool Methods::setCgiPath(){
 		_cgiPath += _pathWithAlias;
 	}
 	std::string fullPath = _cgiPath + _cgiName;
-	Log("FULL CGI_PATH :" + fullPath);
 	std::ifstream file(fullPath.c_str());
 	if(file.is_open()){
 		file.close();
@@ -94,7 +93,6 @@ bool Methods::checkPhpCgi() {
 		size_t lastDot = firstCut.find_last_of('.');
 		if(lastDot != std::string::npos){
 			std::string ext = firstCut.substr(lastDot);
-			Log("EXT FOUND :" + ext);
 			if(ext == ".php")
 				return true;
 			else
@@ -191,13 +189,11 @@ void Methods::cgi_php_handler(int *ret, const char *scriptname, std::string *que
 	{
 		arg[0] = _client->_server->getphpCgi().c_str();
 		script_filename << "SCRIPT_FILENAME=" << path << scriptname;
-		std::cout << "FILE NAME :" << path << scriptname << std::endl;
 		vec.push_back(script_filename.str());
 	}
 	else
 	{
 		script_filename << getCurrentWorkingDirectory() << "/" << path << scriptname;
-		std::cout << "Script_filename :" << script_filename.str() << std::endl;
 		vec.push_back(script_filename.str());
 		commandPath = script_filename.str();
 		arg[0] = commandPath.c_str();
@@ -238,7 +234,6 @@ void Methods::cgi_php_handler(int *ret, const char *scriptname, std::string *que
 		std::strcpy(envp_arr[i], vec[i].c_str());
 	}
 	envp_arr[vec.size()] = NULL;
-	std::cout << "ARG 0 :" << arg[0] << std::endl;
 
 	// We call pipexec transmitting stdoutFd and stdinFd
 	pid_t childPid;
