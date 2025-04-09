@@ -15,14 +15,15 @@ if ($num < 1 || $num > 5) {
 }
 
 // Validation du paramètre 'animal'
-$allowedAnimals = array("bober", "slimak", "ratatouille");
+$allowedAnimals = array("bober", "slimak", "ratatouille", "homik");
 if (!in_array($animal, $allowedAnimals)) {
-    echo "Erreur : Le paramètre 'animal' doit être 'bober', 'slimak' ou 'ratatouille'.";
+    echo "Erreur : Le paramètre 'animal' doit être 'bober', 'homik', 'slimak' ou 'ratatouille'.";
     exit;
 }
 
+// Utilisation d'un nowdoc pour intégrer l'ASCII art sans soucis d'échappement des quotes
 $asciiArts = array(
-    "bober" => "
+    "bober" => <<<'EOD'
 ⠀⠀⢠⣿⣿⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣿⣿⡄⠀⠀
 ⠀⢠⣾⣿⣿⡿⠉⢿⣿⣿⣿⣿⣿⣿⡿⠉⢿⣿⣿⣷⡄⠀
 ⠀⠘⢿⣿⣿⣇⣠⣿⡿⠛⠉⠉⠛⢿⣿⣄⣸⣿⣿⡿⠃⠀
@@ -34,8 +35,9 @@ $asciiArts = array(
 ⠀⠻⣿⣿⣿⣿⣿⡀⠀⠀⢸⡇⠀⠀⢀⣿⣿⣿⣿⣿⠟⠀
 ⠀⠀⠈⠻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⠁⠀⠀
 ⠀⠀⠀⠀⠈⠙⠻⢿⣿⣿⣿⣿⣿⣿⡿⠟⠋⠁⠀⠀⠀⠀
-",
-    "slimak" => "
+EOD
+,
+    "slimak" => <<<'EOD'
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣤⡀⠀⠀⠀⠀⠀⠀⠀⣶⡆
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢧⡀⠀⠀⠀⠀⠀⢀⠏⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢻⢄⠀⠀⠀⢠⠎⠀⠀
@@ -46,8 +48,9 @@ $asciiArts = array(
 ⠀⠀⠀⠀⠀⢸⣳⢴⠋⠢⡄⠘⠁⣠⣴⠞⠛⠁⢈⡽⠁⠀⣠⠃⠀⠀⠀⠀
 ⠀⣀⢠⣀⡂⠉⠿⣀⡆⠀⠸⣬⢿⠋⣁⣀⣈⡴⠋⠀⠠⠊⠁⠀⠀⠀⠀⠀
 ⠙⠉⠉⠙⠛⠛⠛⠋⠙⠛⠛⠛⠉⠉⠛⠛⠁⠈⠛⠃⠈⠀⠀⠀⠀⠀⠀⠀
-",
-    "ratatouille" => "
+EOD
+,
+    "ratatouille" => <<<'EOD'
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⣶⣶⣦⡴⢶⣶⣶⣆⠸⠿⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⣻⣿⣷⣾⣿⣿⡿⠀⠀⠀⠀⠀⠀
@@ -63,10 +66,27 @@ $asciiArts = array(
 ⠀⠀⠀⠀⢿⣧⣀⠀⠀⠀⠀⢀⣀⣠⣤⠶⠶⠶⠶⢶⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠈⠉⠛⠛⠛⠛⠉⠉⠀⠀⠀⠀⠀⣀⡼⠏⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-"
+EOD
+,
+    "homik" => <<<'EOD'
+        _                       
+      (`-`;-"```"-;`-`)         
+       \.'         './          
+       /             \          
+       ;   0     0   ;          
+      /| =         = |\         
+     ; \   '._Y_.'   / ;        
+    ;   `-._ \|/ _.-'   ;       
+   ;        `"""`        ;      
+   ;    `""-.   .-""`    ;      
+   /;  '--._ \ / _.--   ;\      
+  :  `.   `/|| ||\`   .'  :     
+   '.  '-._       _.-'   .'       
+   (((-'`  `"""""`   `'-)))     
+
+EOD
 );
 
-// Affichage de l'ASCII art sélectionné, répété 'num' fois
 for ($i = 0; $i < $num; $i++) {
     echo $asciiArts[$animal] . "\n";
 }

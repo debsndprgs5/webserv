@@ -8,7 +8,7 @@ std::string Rtrim(const std::string &s) {
     return s.substr(start, end - start + 1);
 }
 
-// Extraction du boundary à partir du header Content-Type
+// Extract boundary from header Content-type
 std::string extractBoundary(const std::string& contentType)
 {
     std::string search = "boundary=";
@@ -25,7 +25,7 @@ std::string extractBoundary(const std::string& contentType)
     return "";
 }
 
-// Découpe le body en utilisant le boundary
+// Split up the body using boundary
 std::vector<std::string> splitBodyByBoundary(const std::string& body, const std::string& boundary)
 {
     std::vector<std::string> parts;
@@ -42,13 +42,13 @@ std::vector<std::string> splitBodyByBoundary(const std::string& body, const std:
     return parts;
 }
 
-// Vérifie si une partie est celle contenant un fichier
+// Verify if a part contain a file
 bool isFilePart(const std::string& part)
 {
     return part.find("filename=") != std::string::npos;
 }
 
-// Extraction du nom de fichier à partir de la partie
+// Extract file name from the part
 std::string Methods::extractFileName(const std::string& part)
 {    _allowedTypes[".css"] = "text/css";
     size_t pos = part.find("filename=\"");
@@ -61,15 +61,15 @@ std::string Methods::extractFileName(const std::string& part)
     return part.substr(pos, endPos - pos);
 }
 
-// Extraction du contenu du fichier à partir de la partie
+// Extract file content from a part
 std::string extractFileContent(const std::string& part)
 {
-    // Trouver la séquence "\r\n\r\n" qui sépare les headers du contenu
+    // Find the "\r\n\r\n" sequence that split headers from content
     size_t pos = part.find("\r\n\r\n");
     if (pos == std::string::npos)
         return "";
-    pos += 4; // passer la séquence de séparation
-    // Optionnel : retirer le dernier CRLF qui précède le prochain boundary
+    pos += 4; // Skip the split sequence
+    // Take of last CRLF that preceed the next boundary
     size_t endPos = part.rfind("\r\n");
     if (endPos == std::string::npos)
         return part.substr(pos);
