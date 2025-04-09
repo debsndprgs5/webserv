@@ -37,16 +37,13 @@ struct LocationConfig {
     bool _auto_index;
     std::vector<std::string> _methods;
     std::vector<std::string> _index;
-    bool _sendfile;
     std::string _alias;
-    std::string _php_cgi_path;
     // New members for extra directives
     int _client_body_buffer_size;  // set by "client_body_buffer_size"
-    std::string _cgi_pass;         // set by "cgi_pass"
     // Nested location blocks
     std::vector<LocationConfig> _nested_locations;
 
-    LocationConfig() : _auto_index(false), _sendfile(false),
+    LocationConfig() : _auto_index(false),
                        _client_body_buffer_size(0) {}
 };
 
@@ -67,10 +64,7 @@ struct ServerConfig {
 };
 
 struct HttpConfig {
-    std::vector<std::string> _index;
-    bool _sendfile;
     int _client_max_body_size;
-    std::string _php_cgi_path;
 
-    HttpConfig() : _sendfile(false), _client_max_body_size(0) {}
+    HttpConfig() : _client_max_body_size(0) {}
 };

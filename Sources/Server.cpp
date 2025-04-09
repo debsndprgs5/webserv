@@ -65,8 +65,6 @@ LocationConfig Server::setLocations(LocationConfig location){
 		Conf._root = _root;
 	if(Conf._methods.empty())
 		Conf._methods = _methods;
-	if(Conf._php_cgi_path.empty())
-		Conf._php_cgi_path = _php_cgi_path;
 	if(!Conf._client_body_buffer_size)
 		Conf._client_body_buffer_size = _client_max_body_size;
 	if(!Conf._nested_locations.empty()){
