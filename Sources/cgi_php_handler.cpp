@@ -42,6 +42,7 @@ bool Methods::setCgiPath(){
 		_cgiPath += _pathWithAlias;
 	}
 	std::string fullPath = _cgiPath + _cgiName;
+	Log("FULL CGI_PATH :" + fullPath);
 	std::ifstream file(fullPath.c_str());
 	if(file.is_open()){
 		file.close();

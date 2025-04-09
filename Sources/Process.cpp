@@ -126,7 +126,6 @@ void Process::handleData(struct pollfd &it, std::vector<struct pollfd> &pendingD
 
 int Process::sendCheck(int fd, const char* data, size_t dataLength, size_t bytesSent) {
 
-   Log("Probleme ici ?");
     if (bytesSent >= dataLength) {
         // All data has been sent
 		Client* client = _MappedClient[fd];

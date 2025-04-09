@@ -153,6 +153,7 @@ bool Client::requestIsComplete() const
 
 std::string Client::getResponse(std::string content){
 
+	Log("content to build response from :" + content);
 	std::string response = buildHttpResponse(content, _ret, "OK", _server->getName(), "application/php");
 	Log("RESPONSE FROM CLIENT :" + response);
 	return response;
