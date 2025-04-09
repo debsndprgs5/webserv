@@ -39,24 +39,9 @@ void setLocationAlias(LocationConfig &loc, const std::vector<std::string>& parts
         loc._alias = parts[1];
 }
 
-void setLocationSendfile(LocationConfig &loc, const std::vector<std::string>& parts) {
-    if (parts.size() >= 2)
-        loc._sendfile = parseBool(parts[1]);
-}
-
-void setLocationPhpCgiPath(LocationConfig &loc, const std::vector<std::string>& parts) {
-    if (parts.size() >= 2)
-        loc._php_cgi_path = parts[1];
-}
-
 void setLocationClientBodyBufferSize(LocationConfig &loc, const std::vector<std::string>& parts) {
     if (parts.size() >= 2)
         loc._client_body_buffer_size = std::atoi(parts[1].c_str());
-}
-
-void setLocationCgiPass(LocationConfig &loc, const std::vector<std::string>& parts) {
-    if (parts.size() >= 2)
-        loc._cgi_pass = parts[1];
 }
 
 void setLocationDefaultDirRedirect(LocationConfig &loc, const std::vector<std::string>& parts) {
@@ -107,11 +92,8 @@ LocationConfig parseLocation(std::ifstream &in, const std::string &firstLine)
     locationDirectives["auto_index"] = setLocationAutoIndex;
     locationDirectives["allow_methods"] = setLocationAllowMethods;
     locationDirectives["index"] = setLocationIndex;
-    locationDirectives["sendfile"] = setLocationSendfile;
-    locationDirectives["php_cgi_path"] = setLocationPhpCgiPath;
     locationDirectives["alias"] = setLocationAlias;
     locationDirectives["client_body_buffer_size"] = setLocationClientBodyBufferSize;
-    locationDirectives["cgi_pass"] = setLocationCgiPass;
     locationDirectives["default_dir_redirect"] = setLocationDefaultDirRedirect;
 
     std::string line;

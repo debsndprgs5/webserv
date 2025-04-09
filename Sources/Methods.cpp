@@ -79,7 +79,6 @@ void Methods::setConfig(){
 void Methods::setConfig(LocationConfig *config){
 	_root = config->_root;
 	_methods = config->_methods;
-	_php_cgi_path = config->_php_cgi_path;
 	_buffer_size = config->_client_body_buffer_size;
 }
 
