@@ -77,7 +77,6 @@ void Methods::fillError(std::string error_code){
 }
 
 
-//a tester 
 LocationConfig *Methods::findConfig(std::string path, std::vector<LocationConfig> &locations){
     if (path.empty()) {
         // Path is empty (e.g., GET /index.html), return NULL to use root and aliases.

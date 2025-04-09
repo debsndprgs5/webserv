@@ -105,13 +105,11 @@ void Methods::doMethod(){
 }
 
 void Methods::myPost() {
-    // Vérifier que le body n'est pas vide
     if (_parsedRequest.body.empty()) {
         fillError("400"); // Bad Request
         return;
     }
 
-    // Extraire le boundary depuis le header Content-Type
     std::string contentType = _parsedRequest.headers["Content-Type"];
     std::string boundary = extractBoundary(contentType);
     if (boundary.empty()) {
@@ -119,7 +117,7 @@ void Methods::myPost() {
         return;
     }
 
-    // Découper le body en parties
+    // Split body into parts
     std::vector<std::string> parts = splitBodyByBoundary(_parsedRequest.body, boundary);
     for (size_t i = 0; i < parts.size(); ++i) {
         if (isFilePart(parts[i])) {
@@ -130,7 +128,7 @@ void Methods::myPost() {
                 return;
             }
 
-            // Construire le chemin complet pour sauvegarder le fichier
+            // Build path to save file
             std::string filePath =  _client->_server->getName() + "/" + fileName;
             std::ofstream outFile(filePath.c_str(), std::ios::binary);
             if (outFile.is_open()) {
@@ -142,12 +140,12 @@ void Methods::myPost() {
             }
             else
             {
-                fillError("500"); // Erreur serveur interne
+                fillError("500"); // Internal Error Server
                 return;
             }
         }
     }
-    // Si aucune partie fichier n'a été trouvée
+    // If no file found
     fillError("404");
 }
 
@@ -155,10 +153,10 @@ bool isExecutable(const char* path) {
     struct stat sb;
 	return false;
     if (stat(path, &sb) == 0) {
-        // Vérifie les permissions d'exécution pour le propriétaire, le groupe ou les autres
+        // Check if file can be accesible for execution
         return (sb.st_mode & S_IXUSR) || (sb.st_mode & S_IXGRP) || (sb.st_mode & S_IXOTH);
     }
-    return false; // En cas d'erreur, considère que le fichier n'est pas exécutable
+    return false; // If error , file is set to no executable
 }
 
 bool isHtml(std::string path){

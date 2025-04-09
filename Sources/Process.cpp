@@ -23,22 +23,22 @@ int drainCgiPipe(Client* client)
 		ssize_t bytesRead = read(client->getCgiPipe(), buffer, sizeof(buffer));
 
 		if (bytesRead > 0) {
-			// On ajoute les données lues au buffer
+			// Add data read to client buffer
 			client->appendCgiOutput(std::string(buffer, bytesRead));
-			// On continue la boucle pour lire plus tant que c'est dispo
+			//Keep the loop going for as long as there is data to read 
 		}
 		else if (bytesRead == 0) {
-			// 0 => EOF : le CGI a fini
+			// 0 => EOF : CGI is over
 			client->cgiHasFinished = true;
 			break;
 		}
 		else {
-			// bytesRead < 0 => plus de données pour le moment
-			// => on arrête la lecture dans cette itération
+			// bytesRead < 0 => no more data
+			// => stop reading now, keep the main loop going
 			break;
 		}
 	}
-	return 0; // tu peux renvoyer ce que tu veux
+	return 0;
 }
 
 
@@ -109,16 +109,15 @@ void Process::handleData(struct pollfd &it, std::vector<struct pollfd> &pendingD
 	}
 	else
 	{
-		// On récupère le client associé via _MappedClient
 		Client* client = _MappedClient[it.fd];
 		client->setRecveCheck(false);
-		// On ajoute les données reçues au buffer du client
+		// We add data read to client buffer
 		client->appendRawData(buffer, bytesRecv);
-		// Si la requête est complète (headers + body selon Content-Length), on la traite
+		// If request is complete (headers + body according to Content-Length), we process it
 		if (client->requestIsComplete())
 		{
 			proccessData(client, it.fd, pendingDeco);
-			// Une fois traitée, on vide le buffer pour la prochaine requête
+			// Once data has been  process we clean it
 			client->clearRawData();
 		}
 	}
@@ -157,7 +156,6 @@ void Process::proccessData(Client *client, int fd, std::vector<struct pollfd>& p
 	std::string response;
 	bool isGood = parseHttpRequest(client->getRequest(), parsedRequest);
 	Methods *met = new Methods(client, parsedRequest, _pendingAdd);
-	std::cout << "YOU DON'T SEE ME ? HERE's THE CATCh" << std::endl;
 	if(client->getCgiPipe() > 0){
 		Log("Pipe found");
 		delete met;
@@ -196,7 +194,7 @@ void Process::mainLoop() {
         }
 
         for (std::vector<struct pollfd>::iterator it = _fdArray.begin(); it != _fdArray.end(); ++it) {
-            // 1) Erreurs fatales
+            // 1) Fatal Errors
             if (it->revents & POLLERR) {
                 // => on marquera ce fd pour fermeture
                 pendingDeco.push_back(*it);
