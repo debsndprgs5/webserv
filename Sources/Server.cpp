@@ -53,6 +53,8 @@ void Server::setConfig(ServerConfig Conf){
 	_default_dir_redirect = Conf._default_dir_redirect;
 	if(_default_dir_redirect.empty())
 		_default_dir_redirect="index.html";
+	if(_php_cgi_path.empty())
+		_php_cgi_path = "/usr/bin/php-cgi";
 }
 
 
@@ -65,8 +67,6 @@ LocationConfig Server::setLocations(LocationConfig location){
 		Conf._root = _root;
 	if(Conf._methods.empty())
 		Conf._methods = _methods;
-	if(Conf._php_cgi_path.empty())
-		Conf._php_cgi_path = _php_cgi_path;
 	if(!Conf._client_body_buffer_size)
 		Conf._client_body_buffer_size = _client_max_body_size;
 	if(!Conf._nested_locations.empty()){

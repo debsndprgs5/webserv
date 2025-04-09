@@ -8,6 +8,7 @@ Methods::Methods(Client *client, HttpRequest parsedRequest, std::vector<struct p
     _client = client;
     _parsedRequest = parsedRequest;
 
+	_defaultErrors["400"] = "defaultErrors/400.html";//Bad Request
 	_defaultErrors["404"] = "defaultErrors/404.html";//NotFound
 	_defaultErrors["405"] = "defaultErrors/405.html";//NotAllowed
 	_defaultErrors["413"] = "defaultErrors/413.html";//Payload exceeds max_body_size.
@@ -24,6 +25,7 @@ Methods::Methods(Client *client, HttpRequest parsedRequest, std::vector<struct p
     _allowedTypes[".txt"] = "text/plain";
 	_mappedCodes[200] = "OK";
 	_mappedCodes[201] = "Created";
+	_mappedCodes[400] = "Bad Request";
 	_mappedCodes[404] = "Not Found";
 	_mappedCodes[405] = "Not Implemented";
 	_mappedCodes[413] = "Paylods exceeds max_body_size";

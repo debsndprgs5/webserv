@@ -189,7 +189,8 @@ void Methods::cgi_php_handler(int *ret, const char *scriptname, std::string *que
     arg[0] = NULL;
     if (check_extention_php(scriptname))
     {
-        arg[0] = "/usr/bin/php-cgi";
+        //arg[0] = "/usr/bin/php-cgi";
+		arg[0] = _client->_server->getphpCgi().c_str();
         script_filename << "SCRIPT_FILENAME=" << path << scriptname;
         std::cout << "FILE NAME :" << path << scriptname << std::endl;
         vec.push_back(script_filename.str());
