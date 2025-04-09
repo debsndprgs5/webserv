@@ -39,5 +39,6 @@ class Process{
     bool isPendingDeco(struct pollfd &current, std::vector<struct pollfd> &pendingDeco);
     int sendCheck(int fd, const char* data, size_t dataLength, size_t bytesSent = 0);
     int isCgiPipe(int fd);
+    std::vector <struct pollfd> _pendingAdd;
 };
 void sigHandler(int sig);
