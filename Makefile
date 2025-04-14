@@ -15,7 +15,7 @@ SRC = Sources/HTTP_request_parser.cpp \
 OBJ = $(SRC:.cpp=.o)
 OBJS = $(OBJ)
 
-FLAGS = -D_GLIBCXX_DEBUG -Wall -Wextra -Werror --std=c++98 -g -fsanitize=address
+FLAGS = -Wall -Wextra -Werror --std=c++98 -g #-fsanitize=address -D_GLIBCXX_DEBUG
 CC = g++
 
 NAME = WebServ

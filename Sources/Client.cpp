@@ -19,10 +19,10 @@ Client::Client()
     , _sendTrigger(false)
     , _leftoverSend("")
     , _rawRequestBuffer("")
-    , _pipe(0)
-    , _fd(0)
+    , _pipe(-1)
+    , _fd(-1)
     , _ret(0)
-    , _pid(0)
+    , _pid(-1)
     , _cgiOutput("")
     , _server(NULL)
     , cgiHasFinished(false)
@@ -36,10 +36,10 @@ Client::Client(int socket, Server *server)
     , _sendTrigger(false)
     , _leftoverSend("")
     , _rawRequestBuffer("")
-    , _pipe(0)
-    , _fd(0)
+    , _pipe(-1)
+    , _fd(-1)
     , _ret(0)
-    , _pid(0)
+    , _pid(-1)
     , _cgiOutput("")
     , _server(server)
     , cgiHasFinished(false)
@@ -48,9 +48,10 @@ Client::Client(int socket, Server *server)
 
 
 Client::~Client(){
-	close(_pipe);
-	close(_ClientSocket);
-
+	if (_pipe >= 0)
+			close(_pipe);
+	if (_ClientSocket >= 0)
+			close(_ClientSocket);
 }
 
 Client &Client::operator=(const Client &cpy){

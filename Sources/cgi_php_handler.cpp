@@ -13,11 +13,11 @@
 
 
 void Methods::setCgiName(){
-	const long unsigned int trigger = _parsedRequest.uri.find_first_of('?');
+	size_t trigger = _parsedRequest.uri.find_first_of('?');
 	std::string cleanUri = _parsedRequest.uri;
 	if(trigger != std::string::npos)
 		cleanUri = _parsedRequest.uri.substr(0, trigger);
-	const long unsigned int lastSlash = cleanUri.find_last_of('/');
+	size_t lastSlash = cleanUri.find_last_of('/');
 	if(lastSlash != std::string::npos){
 		_cgiName = cleanUri.substr(lastSlash);
 	}
@@ -26,7 +26,7 @@ void Methods::setCgiName(){
 }
 
 bool Methods::setCgiPath(){
-	const long unsigned int trigger = _parsedRequest.uri.find_first_of('?');
+	size_t trigger = _parsedRequest.uri.find_first_of('?');
 	std::string cleanUri = _parsedRequest.uri;
 	if(trigger != std::string::npos)
 		cleanUri = _parsedRequest.uri.substr(0, trigger);
@@ -211,10 +211,13 @@ void Methods::cgi_php_handler(int *ret, const char *scriptname, std::string *que
     {
         content_type << "CONTENT_TYPE=application/x-www-form-urlencoded";
         vec.push_back(content_type.str());
+				content_length << "CONTENT_LENGTH=" << querystring->size();
     }
+		else {
+			content_length << "CONTENT_LENGTH=0";
+		}
+		vec.push_back(content_length.str());
 
-    content_length << "CONTENT_LENGTH=" << querystring->size();
-    vec.push_back(content_length.str());
 
     vec.push_back("SERVER_PROTOCOL=HTTP/1.1");
 
