@@ -47,7 +47,6 @@ void Server::setConfig(ServerConfig Conf){
 	_socketLen = sizeof(struct sockaddr_in);
 	_socketAddress.sin_family = AF_INET;
 	_socketAddress.sin_addr.s_addr = htonl(INADDR_ANY);
-	setupLocations(Conf._location);
 	if(!_client_max_body_size)
 		_client_max_body_size = 2359297;
 	_default_dir_redirect = Conf._default_dir_redirect;
@@ -55,6 +54,7 @@ void Server::setConfig(ServerConfig Conf){
 		_default_dir_redirect="index.html";
 	if(_php_cgi_path.empty())
 		_php_cgi_path = "/usr/bin/php-cgi";
+	setupLocations(Conf._location);
 }
 
 
@@ -90,7 +90,7 @@ void Server::setupLocations(std::vector<LocationConfig> config){
 //Tries to create a new Socket(for Server), bind and listen in order to all be setup
 //Loop logic to modify a bit, check ip before loop
 //if error log then continue, else pushback();
-//if _sockets empty , end server 
+//if _sockets empty , end server
 int Server::startServer(){
 	std::cout << "Starting new server named : " << _name << std::endl;
 	for(std::vector<int>::iterator it = _ports.begin(); it != _ports.end(); it ++){
