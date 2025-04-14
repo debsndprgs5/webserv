@@ -2,7 +2,7 @@ SRC = Sources/HTTP_request_parser.cpp \
 	Sources/HTTP_response_maker.cpp \
 	Sources/Client.cpp \
 	Sources/Server.cpp \
-	Sources/Process.cpp\
+	Sources/Process.cpp \
 	Sources/Tools.cpp \
 	Sources/Parser/Parser.cpp \
 	Sources/Parser/Utils.cpp \
@@ -10,26 +10,28 @@ SRC = Sources/HTTP_request_parser.cpp \
 	Sources/Parser/ServerParser.cpp \
 	Sources/Parser/HttpParser.cpp \
 	Sources/Methods.cpp \
-	Sources/cgi_php_handler.cpp \
-
-
+	Sources/cgi_php_handler.cpp
 
 OBJ = $(SRC:.cpp=.o)
-OBJS=$(OBJ)
+OBJS = $(OBJ)
 
-FLAGS = g++ -D_GLIBCXX_DEBUG  -Wall -Wextra -Werror --std=c++98 -g -fsanitize=address 
+FLAGS = -D_GLIBCXX_DEBUG -Wall -Wextra -Werror --std=c++98 -g -fsanitize=address
+CC = g++
 
 NAME = WebServ
 
-all : $(NAME)
+all: $(NAME)
 
 $(NAME): $(OBJS)
-	$(FLAGS) $(OBJS) -o $(NAME)
+	$(CC) $(FLAGS) $(OBJS) -o $(NAME)
+
+%.o: %.cpp
+	$(CC) $(FLAGS) -c $< -o $@
 
 clean:
-			rm -f $(OBJ)
+	rm -f $(OBJ)
 
-fclean : clean
-			rm -f $(NAME)
+fclean: clean
+	rm -f $(NAME)
 
-re : fclean all
+re: fclean all

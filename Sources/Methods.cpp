@@ -8,7 +8,6 @@ Methods::Methods(Client *client, HttpRequest parsedRequest, std::vector<struct p
     _client = client;
     _parsedRequest = parsedRequest;
 
-	_defaultErrors["400"] = "defaultErrors/400.html";//Bad Request
 	_defaultErrors["404"] = "defaultErrors/404.html";//NotFound
 	_defaultErrors["405"] = "defaultErrors/405.html";//NotAllowed
 	_defaultErrors["413"] = "defaultErrors/413.html";//Payload exceeds max_body_size.
@@ -25,7 +24,6 @@ Methods::Methods(Client *client, HttpRequest parsedRequest, std::vector<struct p
     _allowedTypes[".txt"] = "text/plain";
 	_mappedCodes[200] = "OK";
 	_mappedCodes[201] = "Created";
-	_mappedCodes[400] = "Bad Request";
 	_mappedCodes[404] = "Not Found";
 	_mappedCodes[405] = "Not Implemented";
 	_mappedCodes[413] = "Paylods exceeds max_body_size";
@@ -79,11 +77,12 @@ void Methods::setConfig(){
 void Methods::setConfig(LocationConfig *config){
 	_root = config->_root;
 	_methods = config->_methods;
+	_php_cgi_path = config->_php_cgi_path;
 	_buffer_size = config->_client_body_buffer_size;
 }
 
 void Methods::doMethod(){
-	if(_client->getRequest().size() > _buffer_size){
+	if(_client->getRequest().size() > (long unsigned int) _buffer_size){
 		fillError("413");
 		return;
 	}
@@ -100,15 +99,17 @@ void Methods::doMethod(){
 		}
 	}
 	else
-		fillError("405");//Not allowed 
+		fillError("405");//Not allowed
 }
 
 void Methods::myPost() {
+    // Vérifier que le body n'est pas vide
     if (_parsedRequest.body.empty()) {
         fillError("400"); // Bad Request
         return;
     }
 
+    // Extraire le boundary depuis le header Content-Type
     std::string contentType = _parsedRequest.headers["Content-Type"];
     std::string boundary = extractBoundary(contentType);
     if (boundary.empty()) {
@@ -116,7 +117,7 @@ void Methods::myPost() {
         return;
     }
 
-    // Split body into parts
+    // Découper le body en parties
     std::vector<std::string> parts = splitBodyByBoundary(_parsedRequest.body, boundary);
     for (size_t i = 0; i < parts.size(); ++i) {
         if (isFilePart(parts[i])) {
@@ -127,7 +128,7 @@ void Methods::myPost() {
                 return;
             }
 
-            // Build path to save file
+            // Construire le chemin complet pour sauvegarder le fichier
             std::string filePath =  _client->_server->getName() + "/" + fileName;
             std::ofstream outFile(filePath.c_str(), std::ios::binary);
             if (outFile.is_open()) {
@@ -139,12 +140,12 @@ void Methods::myPost() {
             }
             else
             {
-                fillError("500"); // Internal Error Server
+                fillError("500"); // Erreur serveur interne
                 return;
             }
         }
     }
-    // If no file found
+    // Si aucune partie fichier n'a été trouvée
     fillError("404");
 }
 
@@ -152,10 +153,10 @@ bool isExecutable(const char* path) {
     struct stat sb;
 	return false;
     if (stat(path, &sb) == 0) {
-        // Check if file can be accesible for execution
+        // Vérifie les permissions d'exécution pour le propriétaire, le groupe ou les autres
         return (sb.st_mode & S_IXUSR) || (sb.st_mode & S_IXGRP) || (sb.st_mode & S_IXOTH);
     }
-    return false; // If error , file is set to no executable
+    return false; // En cas d'erreur, considère que le fichier n'est pas exécutable
 }
 
 bool isHtml(std::string path){
@@ -206,8 +207,7 @@ void Methods::myDelete(){
 			fillError("500"); // Internal Server Error: Deletion failed
 			return;
 		}
-	} 
-	else 
-		fillError("404"); // Not Found: File does not exist        
+	}
+	else
+		fillError("404"); // Not Found: File does not exist
 }
-

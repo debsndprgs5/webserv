@@ -5,11 +5,47 @@
 #include <cstdlib>
 #include <cstring>
 
-Client::Client() : _ClientSocket(-1), _rawRequestBuffer("") {}
+#include "../Includes/Client.hpp"
+#include "../Includes/Server.hpp"
+#include "../Includes/ParsingDataStructs.hpp"
+#include <unistd.h>
+#include <cstdlib>
+#include <cstring>
+
+Client::Client()
+    : _ClientSocket(-1)
+    , _recve_check(false)
+    , _bytesSend(0)
+    , _sendTrigger(false)
+    , _leftoverSend("")
+    , _rawRequestBuffer("")
+    , _pipe(0)
+    , _fd(0)
+    , _ret(0)
+    , _pid(0)
+    , _cgiOutput("")
+    , _server(NULL)
+    , cgiHasFinished(false)
+{
+}
 
 Client::Client(int socket, Server *server)
-	: _ClientSocket(socket), _server(server), _rawRequestBuffer(""), _recve_check(false) , _sendTrigger(false){
+    : _ClientSocket(socket)
+    , _recve_check(false)
+    , _bytesSend(0)
+    , _sendTrigger(false)
+    , _leftoverSend("")
+    , _rawRequestBuffer("")
+    , _pipe(0)
+    , _fd(0)
+    , _ret(0)
+    , _pid(0)
+    , _cgiOutput("")
+    , _server(server)
+    , cgiHasFinished(false)
+{
 }
+
 
 Client::~Client(){
 	close(_pipe);
@@ -124,7 +160,7 @@ void Client::clearRawData(){
 // 1. Headers should finish by "\r\n\r\n".
 // 2. If a "Content-Length" is present, we should have received header + 4 + Content-length bytes
 bool Client::requestIsComplete() const
-{	
+{
 	//std::string method = parseHttpRequest(_rawRequestBuffer).method;
 	size_t headerEnd = _rawRequestBuffer.find("\r\n\r\n");
 	if (headerEnd == std::string::npos){

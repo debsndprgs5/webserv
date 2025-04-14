@@ -17,7 +17,7 @@ std::string extractBoundary(const std::string& contentType)
         std::string boundary = contentType.substr(pos + search.length());
         boundary = Rtrim(boundary);
         // Supprimer d'éventuels guillemets
-        if (!boundary.empty() && boundary.front() == '"' && boundary.back() == '"') {
+        if (!boundary.empty() && boundary[0] == '"' && boundary[boundary.size() - 1] == '"') {
             boundary = boundary.substr(1, boundary.size() - 2);
         }
         return boundary;
