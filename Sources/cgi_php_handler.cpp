@@ -93,7 +93,6 @@ bool Methods::checkPhpCgi() {
 		size_t lastDot = firstCut.find_last_of('.');
 		if(lastDot != std::string::npos){
 			std::string ext = firstCut.substr(lastDot);
-			Log("EXT FOUND :" + ext);
 			if(ext == ".php")
 				return true;
 			else
@@ -185,22 +184,9 @@ void Methods::cgi_php_handler(int *ret, const char *scriptname, std::string *que
                          redirect_status, query_string, path_info, request_uri;
     const char *arg[2];
     std::string commandPath;
-    arg[0] = NULL;
-    if (check_extention_php(scriptname))
-    {
-        arg[0] = "/usr/bin/php-cgi";
-        script_filename << "SCRIPT_FILENAME=" << path << scriptname;
-        std::cout << "FILE NAME :" << path << scriptname << std::endl;
-        vec.push_back(script_filename.str());
-    }
-    else
-    {
-        script_filename << getCurrentWorkingDirectory() << "/" << path << scriptname;
-        std::cout << "Script_filename :" << script_filename.str() << std::endl;
-        vec.push_back(script_filename.str());
-        commandPath = script_filename.str();
-        arg[0] = commandPath.c_str();
-    }
+    arg[0] = "/usr/bin/php-cgi";
+    script_filename << "SCRIPT_FILENAME=" << path << scriptname;
+    vec.push_back(script_filename.str());
     arg[1] = NULL;
 
     // 0 = GET, 1 = POST
@@ -240,7 +226,6 @@ void Methods::cgi_php_handler(int *ret, const char *scriptname, std::string *que
         std::strcpy(envp_arr[i], vec[i].c_str());
     }
     envp_arr[vec.size()] = NULL;
-    std::cout << "ARG 0 :" << arg[0] << std::endl;
 
     // On appelle pipexec en transmettant stdoutFd et aussi stdinFd
     pid_t childPid;
@@ -282,10 +267,10 @@ void Methods::startCgiAsync(int reqtype, std::string cgiArg)
         stdinPipe[1] = -1;
     }
 
-    std::cout << "Pipe created: stdout read fd = " << stdoutPipe[0] << ", write fd = " << stdoutPipe[1] << std::endl;
-    if (reqtype == 1) {
-        std::cout << "Pipe created: stdin read fd = " << stdinPipe[0] << ", write fd = " << stdinPipe[1] << std::endl;
-    }
+    // std::cout << "Pipe created: stdout read fd = " << stdoutPipe[0] << ", write fd = " << stdoutPipe[1] << std::endl;
+    // if (reqtype == 1) {
+    //     std::cout << "Pipe created: stdin read fd = " << stdinPipe[0] << ", write fd = " << stdinPipe[1] << std::endl;
+    // }
 
     // Appel de cgi_php_handler en transmettant stdoutPipe[1] et stdinPipe[0] (ou -1 pour GET)
     cgi_php_handler(&_ret, _cgiName.c_str(), &cgiArg, reqtype, _cgiPath.c_str(),
@@ -323,5 +308,4 @@ void Methods::startCgiAsync(int reqtype, std::string cgiArg)
     cgiFd.events = POLLIN;
     _fdArray.push_back(cgiFd);
 
-    std::cout << "PIPE FD in startCgiAsync = " << stdoutPipe[0] << std::endl;
 }
